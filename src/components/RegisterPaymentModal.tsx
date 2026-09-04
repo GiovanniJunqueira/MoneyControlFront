@@ -40,7 +40,7 @@ export function RegisterPaymentModal({ debt, onClose, onSaved }: Props) {
           <label className="field-label" htmlFor="amount">Valor recebido</label>
           <input id="amount" required inputMode="decimal" className="field num" value={amount} onChange={(e) => setAmount(e.target.value)} />
         </div>
-        {error && <p className="text-sm text-ledger-brick">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
           <button type="submit" disabled={saving} className="btn-primary flex-1">

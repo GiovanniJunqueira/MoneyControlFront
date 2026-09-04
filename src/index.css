@@ -2,48 +2,99 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-bg: 242 242 247;
+  --color-surface: 255 255 255;
+  --color-surface-soft: 242 242 247;
+  --color-line: 226 226 231;
+  --color-ink: 28 28 30;
+  --color-ink-soft: 110 110 115;
+  --color-accent: 0 122 255;
+  --color-accent-soft: 224 240 255;
+  --color-success: 40 174 90;
+  --color-success-soft: 224 247 231;
+  --color-danger: 255 59 48;
+  --color-danger-soft: 255 227 224;
+  --color-warning: 255 149 0;
+  --color-warning-soft: 255 236 204;
+}
+
+:root.dark {
+  --color-bg: 0 0 0;
+  --color-surface: 28 28 30;
+  --color-surface-soft: 44 44 46;
+  --color-line: 56 56 58;
+  --color-ink: 255 255 255;
+  --color-ink-soft: 152 152 157;
+  --color-accent: 10 132 255;
+  --color-accent-soft: 12 46 82;
+  --color-success: 48 209 88;
+  --color-success-soft: 14 41 24;
+  --color-danger: 255 69 58;
+  --color-danger-soft: 61 16 13;
+  --color-warning: 255 159 10;
+  --color-warning-soft: 61 40 0;
+}
+
 @layer base {
   html {
     -webkit-tap-highlight-color: transparent;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
   }
 
   body {
-    @apply bg-paper text-ink font-sans antialiased;
+    @apply bg-bg text-ink font-sans antialiased;
   }
 
-  /* Números tabulares em toda a interface financeira */
   .num {
-    @apply font-mono tabular-nums;
+    font-variant-numeric: tabular-nums;
+    @apply font-semibold;
   }
 
   ::selection {
-    background: #2f523333;
+    background: rgb(var(--color-accent) / 0.25);
   }
 
   :focus-visible {
-    outline: 2px solid #2f5233;
+    outline: 2px solid rgb(var(--color-accent));
     outline-offset: 2px;
   }
 }
 
 @layer components {
-  .ledger-row {
-    @apply flex items-center justify-between gap-4 border-b border-rule-soft py-3;
+  .card {
+    @apply rounded-3xl bg-surface p-5 shadow-sm shadow-black/5 ring-1 ring-line/70;
+  }
+
+  .list-row {
+    @apply flex items-center justify-between gap-4 py-3.5 first:pt-0 last:pb-0;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-sm bg-ink px-4 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-ink-soft disabled:opacity-50;
+    @apply inline-flex items-center justify-center rounded-full bg-accent px-5 py-3 text-[15px] font-semibold text-white transition-transform active:scale-[0.97] disabled:opacity-50;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-sm border border-rule px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-paper-raised disabled:opacity-50;
+    @apply inline-flex items-center justify-center rounded-full bg-surface-soft px-5 py-3 text-[15px] font-semibold text-ink transition-colors hover:bg-line/70 disabled:opacity-50;
+  }
+
+  .icon-btn {
+    @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-soft text-ink-soft transition-colors hover:bg-line/70 hover:text-ink;
   }
 
   .field {
-    @apply w-full rounded-sm border border-rule bg-paper-raised px-3 py-2.5 text-sm text-ink placeholder:text-ink-soft/60 focus:border-ink;
+    @apply w-full rounded-2xl border-0 bg-surface-soft px-4 py-3 text-[15px] text-ink placeholder:text-ink-soft/60 focus:outline-none focus:ring-2 focus:ring-accent;
   }
 
   .field-label {
-    @apply mb-1.5 block text-sm text-ink-soft;
+    @apply mb-1.5 block text-[13px] font-medium text-ink-soft;
+  }
+
+  .pill {
+    @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold;
   }
 }

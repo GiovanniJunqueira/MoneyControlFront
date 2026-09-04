@@ -3,7 +3,7 @@ import { Modal } from "./Modal";
 import { api, extractErrorMessage } from "../api/client";
 import { Category } from "../api/types";
 
-const SUGGESTED_COLORS = ["#2F5233", "#8B3A2B", "#C98A2C", "#4A5A61", "#5B4636", "#3B6E8F"];
+const SUGGESTED_COLORS = ["#FF3B30", "#FF9500", "#FFCC00", "#34C759", "#30B0C7", "#007AFF", "#5856D6", "#AF52DE"];
 
 interface Props {
   categories: Category[];
@@ -43,39 +43,43 @@ export function ManageCategoriesModal({ categories, onClose, onChanged }: Props)
 
   return (
     <Modal title="Categorias" onClose={onClose}>
-      <ul className="mb-5 max-h-48 divide-y divide-rule-soft overflow-y-auto">
+      <ul className="mb-5 max-h-48 divide-y divide-line/70 overflow-y-auto">
         {categories.length === 0 && <li className="py-2 text-sm text-ink-soft">Nenhuma categoria ainda.</li>}
         {categories.map((c) => (
           <li key={c.id} className="flex items-center justify-between py-2">
-            <span className="flex items-center gap-2 text-sm text-ink">
-              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c.color || "#1C2B33" }} />
+            <span className="flex items-center gap-2 text-sm font-medium text-ink">
+              <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: c.color || "#8E8E93" }} />
               {c.name}
             </span>
-            <button onClick={() => handleDelete(c.id)} className="text-xs text-ledger-brick hover:underline">
+            <button onClick={() => handleDelete(c.id)} className="text-xs font-medium text-danger hover:underline">
               Excluir
             </button>
           </li>
         ))}
       </ul>
 
-      <form onSubmit={handleCreate} className="space-y-3 border-t border-rule-soft pt-4">
+      <form onSubmit={handleCreate} className="space-y-3 border-t border-line/70 pt-4">
         <div>
           <label className="field-label" htmlFor="catName">Nova categoria</label>
           <input id="catName" required className="field" value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Mercado" />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2.5">
           {SUGGESTED_COLORS.map((c) => (
             <button
               key={c}
               type="button"
               onClick={() => setColor(c)}
-              className="h-6 w-6 rounded-full ring-offset-2"
-              style={{ backgroundColor: c, boxShadow: color === c ? `0 0 0 2px ${c}` : undefined }}
+              className="h-7 w-7 rounded-full transition-transform"
+              style={{
+                backgroundColor: c,
+                boxShadow: color === c ? `0 0 0 2px rgb(var(--color-surface)), 0 0 0 4px ${c}` : undefined,
+                transform: color === c ? "scale(1.08)" : undefined,
+              }}
               aria-label={`Cor ${c}`}
             />
           ))}
         </div>
-        {error && <p className="text-sm text-ledger-brick">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
         <button type="submit" disabled={saving} className="btn-primary w-full">
           {saving ? "Adicionando…" : "Adicionar categoria"}
         </button>

@@ -80,7 +80,7 @@ export function AddExpenseModal({ categories, onClose, onSaved }: Props) {
           <input id="date" type="date" required className="field" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
 
-        {error && <p className="text-sm text-ledger-brick">{error}</p>}
+        {error && <p className="text-sm text-danger">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
