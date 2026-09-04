@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-paper text-ink font-sans antialiased;
+  }
+
+  /* Números tabulares em toda a interface financeira */
+  .num {
+    @apply font-mono tabular-nums;
+  }
+
+  ::selection {
+    background: #2f523333;
+  }
+
+  :focus-visible {
+    outline: 2px solid #2f5233;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .ledger-row {
+    @apply flex items-center justify-between gap-4 border-b border-rule-soft py-3;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-sm bg-ink px-4 py-2.5 text-sm font-medium text-paper transition-colors hover:bg-ink-soft disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-sm border border-rule px-4 py-2.5 text-sm font-medium text-ink transition-colors hover:bg-paper-raised disabled:opacity-50;
+  }
+
+  .field {
+    @apply w-full rounded-sm border border-rule bg-paper-raised px-3 py-2.5 text-sm text-ink placeholder:text-ink-soft/60 focus:border-ink;
+  }
+
+  .field-label {
+    @apply mb-1.5 block text-sm text-ink-soft;
+  }
+}
