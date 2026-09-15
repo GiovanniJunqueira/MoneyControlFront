@@ -132,3 +132,12 @@ export function PencilIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function TrendingUpIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M23 6l-9.5 9.5-5-5L1 18" />
+      <path d="M17 6h6v6" />
+    </svg>
+  );
+}

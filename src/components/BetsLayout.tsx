@@ -1,23 +1,23 @@
 import { useState } from "react";
-import { Link, Outlet } from "react-router-dom";
+import { Link, Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { SettingsIcon, TrendingUpIcon } from "./icons";
+import { SettingsIcon, WalletIcon } from "./icons";
 import { SettingsModal } from "./SettingsModal";
 
-export function HomeLayout() {
+export function BetsLayout() {
   const { user, logout } = useAuth();
   const [showSettings, setShowSettings] = useState(false);
+
+  if (!user?.betsEnabled) return <Navigate to="/" replace />;
 
   return (
     <div className="min-h-screen bg-bg">
       <div className="mx-auto flex max-w-2xl items-center justify-between px-4 pb-3 pt-[calc(env(safe-area-inset-top)+1.25rem)] md:pt-8">
-        <Link to="/" className="text-lg font-bold tracking-tight text-ink">Financeiro</Link>
+        <Link to="/bets" className="text-lg font-bold tracking-tight text-ink">Bets</Link>
         <div className="flex items-center gap-2">
-          {user?.betsEnabled && (
-            <Link to="/bets" className="icon-btn" aria-label="Ir para o Bets">
-              <TrendingUpIcon className="h-[18px] w-[18px]" />
-            </Link>
-          )}
+          <Link to="/" className="icon-btn" aria-label="Ir para o Financeiro">
+            <WalletIcon className="h-[18px] w-[18px]" />
+          </Link>
           <button onClick={() => setShowSettings(true)} className="icon-btn" aria-label="Configurações">
             <SettingsIcon className="h-[18px] w-[18px]" />
           </button>

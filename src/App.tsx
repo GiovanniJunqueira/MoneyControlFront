@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AppLayout } from "./components/AppLayout";
 import { HomeLayout } from "./components/HomeLayout";
+import { BetsLayout } from "./components/BetsLayout";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { HomePage } from "./pages/HomePage";
@@ -12,6 +13,7 @@ import { DevedoresGeralPage } from "./pages/DevedoresGeralPage";
 import { GastosPage } from "./pages/GastosPage";
 import { DevedoresPage } from "./pages/DevedoresPage";
 import { DevedorDetailPage } from "./pages/DevedorDetailPage";
+import { BetsHomePage } from "./pages/BetsHomePage";
 
 export function App() {
   return (
@@ -32,6 +34,10 @@ export function App() {
               <Route path="/tabs/:tabId/gastos" element={<GastosPage />} />
               <Route path="/tabs/:tabId/devedores" element={<DevedoresPage />} />
               <Route path="/tabs/:tabId/devedores/:id" element={<DevedorDetailPage />} />
+            </Route>
+
+            <Route element={<BetsLayout />}>
+              <Route path="/bets" element={<BetsHomePage />} />
             </Route>
           </Route>
 

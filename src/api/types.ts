@@ -148,3 +148,39 @@ export interface DevedorGeral {
   tabName: string;
   tabColor: string | null;
 }
+
+export interface BetHouse {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
+export interface BetHouseBalance {
+  id: string;
+  name: string;
+  color: string | null;
+  currentBalance: number;
+  currentBalanceUnits: number;
+  startOfDayBalance: number;
+  updatedToday: boolean;
+}
+
+export interface BetMonth {
+  id: string;
+  startDate: string;
+  unitValue: number;
+  totalBanca: number;
+  totalBancaUnits: number;
+  profitLoss: number;
+  profitLossUnits: number;
+  houses: BetHouseBalance[];
+}
+
+export interface BetMonthHistory {
+  id: string;
+  startDate: string;
+  endDate: string | null;
+  startingBanca: number;
+  endingBanca: number;
+  profitLoss: number;
+}

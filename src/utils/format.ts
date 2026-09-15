@@ -12,6 +12,10 @@ export function formatDateLong(dateStr: string): string {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
 }
 
+export function formatUnits(value: number): string {
+  return `${value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} un`;
+}
+
 /** Formata uma period key "YYYY-MM" como "Setembro de 2026". */
 export function formatMonthName(periodKey: string): string {
   const [year, month] = periodKey.split("-").map(Number);

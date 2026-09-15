@@ -30,7 +30,7 @@ O conceito original era um "livro-caixa analógico" (papel, tinta, serifada Frau
 3. Dívidas têm 3 status (`pendente`/`parcial`/`quitado`) com cores próprias (ver `STATUS_CLASS` em `DevedorDetailPage.tsx`, usa os tokens `danger`/`warning`/`success`).
 4. Abas: criar/renomear/recolorir/excluir (`CreateTabModal.tsx`, `ManageTabsModal.tsx`) — excluir a última aba é bloqueado pelo backend. A Visão Geral funde categorias/pessoas de mesmo nome entre abas diferentes numa linha só (decisão do usuário) e não permite lançar dado nela (é só leitura — pra lançar algo, precisa estar dentro de uma aba específica).
 
-## Roteamento (duas "famílias" de tela)
+## Roteamento (três "famílias" de tela)
 
 ```
 /                           -> HomePage (dentro de HomeLayout: topo simples, sem nav de Gastos/Devedores)
@@ -38,6 +38,7 @@ O conceito original era um "livro-caixa analógico" (papel, tinta, serifada Frau
 /tabs/:tabId/gastos         -> GastosPage (dentro de AppLayout: sidebar com Gastos/Devedores da aba)
 /tabs/:tabId/devedores      -> DevedoresPage
 /tabs/:tabId/devedores/:id  -> DevedorDetailPage
+/bets                       -> BetsHomePage (dentro de BetsLayout: própria topbar, nada a ver com Financeiro)
 ```
 
 `AppLayout` busca `GET /tabs` pra descobrir o nome da aba atual (via `tabId` do `useParams`) e mostrar no lugar do wordmark "Financeiro" no topo da `Sidebar` — esse wordmark/ícone de casa é o link de volta pra `/`. Toda página dentro de uma aba lê `tabId` via `useParams` e prefixa as chamadas de API com `/tabs/${tabId}/...`; os modais (`AddExpenseModal`, `AddDebtModal`, `AddDebtorModal`, `ManageCategoriesModal`, `PeriodSettingsModal`, `RegisterPaymentModal`) recebem `tabId` como prop pro mesmo fim.
@@ -58,6 +59,16 @@ Padrão de página: cada página de dados busca tudo via `useCallback` + `useEff
 ## `DonutTabChart` — o gráfico de rosca da tela inicial
 
 SVG puro (sem lib de gráfico), em `src/components/DonutTabChart.tsx`. Cada aba vira uma fatia cujo ângulo é proporcional a `totalGastoPeriodo` (vindo de `GET /dashboard/visao-geral`), com um piso mínimo de 8° pra aba com R$0 continuar visível/clicável — sem isso ela sumiria do gráfico. É uma rosca (donut), não uma pizza cheia, de propósito: sobra espaço no centro (a "rosquinha") pra um botão HTML absolutamente posicionado por cima do SVG ("Visão Geral" + total), sem competir com o hit-test das fatias.
+
+## Módulo Bets — área separada, fora do layout do Financeiro
+
+Ativado por `user.betsEnabled` (toggle no `SettingsModal.tsx`, ao lado do dark/light). Não tem nada a ver com abas — é uma segunda "aplicação" dentro do mesmo app React, com seu próprio layout (`BetsLayout.tsx`: topbar "Bets" + botão pra voltar ao Financeiro + Configurações + Sair, sem `Sidebar`/`AppLayout`).
+
+- `BetsLayout` faz o guard de acesso: se `user.betsEnabled` for `false`, redireciona pra `/` (`<Navigate to="/" replace />`) — mesma ideia do `ProtectedRoute`, mas checando a flag em vez da sessão.
+- `HomeLayout.tsx` mostra um ícone "Bets" (`TrendingUpIcon`) do lado do de Configurações **só se** `user.betsEnabled` — é o único ponto de entrada no fluxo normal do Financeiro; o caminho de volta é o ícone `WalletIcon` dentro do `BetsLayout`.
+- **`BetsHomePage`**: busca `GET /bets/months/current` (204 = nenhum mês iniciado ainda → estado vazio) e `GET /bets/houses` em paralelo. Mostra banca total e lucro/prejuízo **em unidades primeiro, R$ como texto secundário** (decisão do usuário — em apostas o desempenho é discutido em unidades). Reaproveita `CategoryBar` pra mostrar a fatia de cada casa na banca total (o componente já era genérico o bastante, só precisa de `{nome, cor, total, percentual}`).
+- Modais: `CreateBetHouseModal`/`ManageBetHousesModal` (cópia exata do padrão `CreateTabModal`/`ManageTabsModal`), `UpdateBetBalanceModal` (mostra saldo início do dia read-only + input do saldo atual, padrão do `RegisterPaymentModal`), `StartBetMonthModal` (pede o valor da unidade pro mês, texto muda se já existe um mês aberto sendo fechado), `ChangeUnitValueModal` (avisa que só vale a partir de hoje).
+- `formatUnits()` em `utils/format.ts` formata em "X,XX un" (pt-BR, 2 casas).
 
 ## Autenticação
 
