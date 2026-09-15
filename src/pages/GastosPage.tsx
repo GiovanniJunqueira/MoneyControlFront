@@ -111,7 +111,7 @@ export function GastosPage() {
                   <span className="num text-[15px] text-ink">{formatCurrency(e.amount)}</span>
                   <button
                     onClick={() => handleDeleteExpense(e.id)}
-                    className="text-ink-soft opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
+                    className="text-ink-soft opacity-60 transition-opacity hover:text-danger active:opacity-100 md:opacity-0 md:group-hover:opacity-100"
                     aria-label="Excluir gasto"
                   >
                     <TrashIcon className="h-4 w-4" />

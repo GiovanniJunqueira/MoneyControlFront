@@ -79,11 +79,11 @@
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-full bg-surface-soft px-5 py-3 text-[15px] font-semibold text-ink transition-colors hover:bg-line/70 disabled:opacity-50;
+    @apply inline-flex items-center justify-center rounded-full bg-surface-soft px-5 py-3 text-[15px] font-semibold text-ink transition-all hover:bg-line/70 active:scale-[0.97] disabled:opacity-50;
   }
 
   .icon-btn {
-    @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-surface-soft text-ink-soft transition-colors hover:bg-line/70 hover:text-ink;
+    @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-soft text-ink-soft transition-all hover:bg-line/70 hover:text-ink active:scale-90 active:bg-line/70;
   }
 
   .field {

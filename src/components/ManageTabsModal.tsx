@@ -87,12 +87,12 @@ export function ManageTabsModal({ tabs, onClose, onChanged }: Props) {
                   <span className="truncate">{tab.name}</span>
                 </span>
                 <div className="flex shrink-0 items-center gap-1">
-                  <button onClick={() => startEdit(tab)} className="icon-btn h-8 w-8" aria-label={`Editar ${tab.name}`}>
+                  <button onClick={() => startEdit(tab)} className="icon-btn" aria-label={`Editar ${tab.name}`}>
                     <PencilIcon className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(tab.id)}
-                    className="icon-btn h-8 w-8 text-danger"
+                    className="icon-btn text-danger"
                     aria-label={`Excluir ${tab.name}`}
                   >
                     <XIcon className="h-4 w-4" />

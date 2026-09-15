@@ -14,7 +14,7 @@ export function Modal({ title, onClose, children }: Props) {
       onClick={onClose}
     >
       <div
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-surface p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] shadow-2xl md:rounded-3xl md:pb-6"
+        className="max-h-[85dvh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-surface p-6 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] shadow-2xl md:max-h-[90vh] md:rounded-3xl md:pb-6"
         role="dialog"
         aria-modal="true"
         aria-label={title}

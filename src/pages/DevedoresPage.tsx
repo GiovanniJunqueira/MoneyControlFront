@@ -51,7 +51,7 @@ export function DevedoresPage() {
           <ul className="divide-y divide-line/70">
             {debtors.map((d) => (
               <li key={d.id}>
-                <Link to={`/tabs/${tabId}/devedores/${d.id}`} className="list-row -mx-1 rounded-2xl px-1 transition-colors hover:bg-surface-soft">
+                <Link to={`/tabs/${tabId}/devedores/${d.id}`} className="list-row -mx-1 rounded-2xl px-1 transition-colors hover:bg-surface-soft active:bg-surface-soft">
                   <div className="min-w-0">
                     <p className="truncate text-[15px] font-medium text-ink">{d.name}</p>
                     <p className="text-xs text-ink-soft">

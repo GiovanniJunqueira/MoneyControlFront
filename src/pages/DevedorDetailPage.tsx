@@ -92,7 +92,7 @@ export function DevedorDetailPage() {
                   )}
                   <button
                     onClick={() => handleDeleteDebt(d.id)}
-                    className="text-ink-soft opacity-0 transition-opacity hover:text-danger group-hover:opacity-100"
+                    className="text-ink-soft opacity-60 transition-opacity hover:text-danger active:opacity-100 md:opacity-0 md:group-hover:opacity-100"
                     aria-label="Excluir dívida"
                   >
                     <TrashIcon className="h-4 w-4" />

@@ -37,8 +37,7 @@ export function HomePage() {
   if (!data) return null;
 
   return (
-    <div className="pt-4">
-      <h1 className="mb-1 text-center text-2xl font-extrabold tracking-tight text-ink">Financeiro</h1>
+    <div className="pt-2">
       <p className="mb-8 text-center text-ink-soft">Escolha uma aba ou veja a visão geral.</p>
 
       <DonutTabChart
@@ -54,7 +53,7 @@ export function HomePage() {
             <li key={aba.id}>
               <button
                 onClick={() => navigate(`/tabs/${aba.id}/gastos`)}
-                className="list-row w-full text-left transition-colors hover:bg-surface-soft"
+                className="list-row -mx-1 w-[calc(100%+0.5rem)] rounded-2xl px-1 text-left transition-colors hover:bg-surface-soft active:bg-surface-soft"
               >
                 <span className="flex min-w-0 items-center gap-2.5">
                   <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: aba.color || "#8E8E93" }} />
