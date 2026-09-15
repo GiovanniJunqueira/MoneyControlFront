@@ -79,6 +79,8 @@ export interface DebtorDetail {
   id: string;
   name: string;
   notes: string | null;
+  totalDevido: number;
+  period: FiscalPeriod;
   debts: Debt[];
 }
 

@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import { Debt, DebtorDetail, DebtStatus } from "../api/types";
 import { AddDebtModal } from "../components/AddDebtModal";
 import { RegisterPaymentModal } from "../components/RegisterPaymentModal";
+import { PeriodNavigator } from "../components/PeriodNavigator";
 import { ArrowLeftIcon, CheckIcon, PlusIcon, TrashIcon } from "../components/icons";
 import { formatCurrency, formatDate } from "../utils/format";
 
@@ -21,6 +22,7 @@ const STATUS_CLASS: Record<DebtStatus, string> = {
 
 export function DevedorDetailPage() {
   const { tabId = "", id } = useParams<{ tabId: string; id: string }>();
+  const [periodKey, setPeriodKey] = useState<string | undefined>(undefined);
   const [debtor, setDebtor] = useState<DebtorDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAddDebt, setShowAddDebt] = useState(false);
@@ -32,10 +34,12 @@ export function DevedorDetailPage() {
   const load = useCallback(async () => {
     if (!id) return;
     setLoading(true);
-    const res = await api.get<DebtorDetail>(`/tabs/${tabId}/debtors/${id}`);
+    const res = await api.get<DebtorDetail>(`/tabs/${tabId}/debtors/${id}`, {
+      params: periodKey ? { period: periodKey } : {},
+    });
     setDebtor(res.data);
     setLoading(false);
-  }, [tabId, id]);
+  }, [tabId, id, periodKey]);
 
   useEffect(() => {
     load();
@@ -60,6 +64,12 @@ export function DevedorDetailPage() {
     setSelectedIds(new Set());
   }
 
+  const abertasNoPeriodo = useMemo(() => debtor?.debts.filter((d) => d.status !== "quitado") ?? [], [debtor]);
+  const totalAbertoNoPeriodo = useMemo(
+    () => abertasNoPeriodo.reduce((sum, d) => sum + (d.amount - d.paidAmount), 0),
+    [abertasNoPeriodo]
+  );
+
   const selectedTotal = useMemo(() => {
     if (!debtor) return 0;
     return debtor.debts
@@ -67,12 +77,12 @@ export function DevedorDetailPage() {
       .reduce((sum, d) => sum + (d.amount - d.paidAmount), 0);
   }, [debtor, selectedIds]);
 
-  async function handleQuitarSelecionadas() {
-    if (!debtor || selectedIds.size === 0) return;
+  async function quitarDividas(debtIds: string[]) {
+    if (!debtor || debtIds.length === 0) return;
     setSettling(true);
     try {
       await Promise.all(
-        Array.from(selectedIds).map((debtId) => {
+        debtIds.map((debtId) => {
           const debt = debtor.debts.find((d) => d.id === debtId);
           if (!debt) return Promise.resolve();
           const restante = debt.amount - debt.paidAmount;
@@ -89,8 +99,7 @@ export function DevedorDetailPage() {
   if (loading && !debtor) return <p className="text-ink-soft">Carregando…</p>;
   if (!debtor) return null;
 
-  const totalDevido = debtor.debts.reduce((sum, d) => sum + (d.status === "quitado" ? 0 : d.amount - d.paidAmount), 0);
-  const temSelecionaveis = debtor.debts.some((d) => d.status !== "quitado");
+  const temSelecionaveis = abertasNoPeriodo.length > 0;
 
   return (
     <div>
@@ -109,13 +118,15 @@ export function DevedorDetailPage() {
       </div>
 
       <div className="card mb-4">
-        <p className="text-sm text-ink-soft">Saldo devedor</p>
-        <p className="num mt-1 text-2xl text-danger">{formatCurrency(totalDevido)}</p>
+        <p className="text-sm text-ink-soft">Saldo devedor (todas as dívidas, qualquer período)</p>
+        <p className="num mt-1 text-2xl text-danger">{formatCurrency(debtor.totalDevido)}</p>
       </div>
 
+      <PeriodNavigator period={debtor.period} onNavigate={setPeriodKey} />
+
       <div className="card">
-        <div className="mb-1 flex items-center justify-between">
-          <h2 className="text-base font-bold text-ink">Dívidas</h2>
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <h2 className="text-base font-bold text-ink">Dívidas do período</h2>
           {temSelecionaveis && (
             <button
               onClick={() => (selecting ? cancelSelecting() : setSelecting(true))}
@@ -126,7 +137,7 @@ export function DevedorDetailPage() {
           )}
         </div>
         {debtor.debts.length === 0 ? (
-          <p className="py-6 text-sm text-ink-soft">Nenhuma dívida lançada ainda.</p>
+          <p className="py-6 text-sm text-ink-soft">Nenhuma dívida lançada nesse período.</p>
         ) : (
           <ul className="divide-y divide-line/70">
             {debtor.debts.map((d) => {
@@ -185,8 +196,20 @@ export function DevedorDetailPage() {
             <span className="text-sm text-ink-soft">
               {selectedIds.size} {selectedIds.size === 1 ? "selecionada" : "selecionadas"} · <span className="num">{formatCurrency(selectedTotal)}</span>
             </span>
-            <button onClick={handleQuitarSelecionadas} disabled={settling} className="btn-primary">
+            <button onClick={() => quitarDividas(Array.from(selectedIds))} disabled={settling} className="btn-primary">
               {settling ? "Quitando…" : "Quitar selecionadas"}
+            </button>
+          </div>
+        )}
+
+        {!selecting && temSelecionaveis && (
+          <div className="mt-4 border-t border-line/70 pt-4">
+            <button
+              onClick={() => quitarDividas(abertasNoPeriodo.map((d) => d.id))}
+              disabled={settling}
+              className="btn-secondary w-full"
+            >
+              {settling ? "Quitando…" : `Quitar todas do período · ${formatCurrency(totalAbertoNoPeriodo)}`}
             </button>
           </div>
         )}
