@@ -2,6 +2,8 @@
 
 Frontend do sistema de controle financeiro pessoal. Consome a API em `financeiro-api` (projeto irmão, Spring Boot). Este arquivo dá contexto rápido ao Claude Code sobre decisões já tomadas.
 
+O usuário organiza os dados em **abas** (ex: uma por banco — BTG, Itaú...) — cada aba é uma cópia independente do sistema (categorias, gastos, devedores, período fiscal próprios). A tela inicial (`HomePage`) é um gráfico de rosca com uma fatia por aba (proporcional ao gasto do período) e "Visão Geral" clicável no centro, que soma todas as abas.
+
 ## Stack e por quê
 
 - **React 18 + TypeScript + Vite** — escolhido por ser o mais pedido em vagas (decisão do usuário, mesmo raciocínio do backend em Java).
@@ -23,9 +25,22 @@ O conceito original era um "livro-caixa analógico" (papel, tinta, serifada Frau
 
 ## Decisões de produto (espelham o backend)
 
-1. Gastos e Devedores são módulos independentes, cada um com seu próprio período fiscal (dia de fechamento configurável). O usuário escolhe o período diretamente clicando na data no `PeriodNavigator` (abre um `<input type="month">` nativo sobreposto ao label), além de navegar mês a mês com as setas.
-2. Categorias são customizáveis (nome + cor, paleta vibrante estilo tags do iOS) — sem seed fixo.
+1. Gastos e Devedores são módulos independentes, cada um com seu próprio período fiscal (dia de fechamento configurável) — e **por aba**: cada aba tem sua própria config. O usuário escolhe o período diretamente clicando na data no `PeriodNavigator` (abre um `<input type="month">` nativo sobreposto ao label), além de navegar mês a mês com as setas.
+2. Categorias são customizáveis (nome + cor, paleta vibrante estilo tags do iOS) — sem seed fixo, únicas por aba.
 3. Dívidas têm 3 status (`pendente`/`parcial`/`quitado`) com cores próprias (ver `STATUS_CLASS` em `DevedorDetailPage.tsx`, usa os tokens `danger`/`warning`/`success`).
+4. Abas: criar/renomear/recolorir/excluir (`CreateTabModal.tsx`, `ManageTabsModal.tsx`) — excluir a última aba é bloqueado pelo backend. A Visão Geral funde categorias/pessoas de mesmo nome entre abas diferentes numa linha só (decisão do usuário) e não permite lançar dado nela (é só leitura — pra lançar algo, precisa estar dentro de uma aba específica).
+
+## Roteamento (duas "famílias" de tela)
+
+```
+/                           -> HomePage (dentro de HomeLayout: topo simples, sem nav de Gastos/Devedores)
+/visao-geral                -> OverviewPage (idem, HomeLayout)
+/tabs/:tabId/gastos         -> GastosPage (dentro de AppLayout: sidebar com Gastos/Devedores da aba)
+/tabs/:tabId/devedores      -> DevedoresPage
+/tabs/:tabId/devedores/:id  -> DevedorDetailPage
+```
+
+`AppLayout` busca `GET /tabs` pra descobrir o nome da aba atual (via `tabId` do `useParams`) e mostrar no lugar do wordmark "Financeiro" no topo da `Sidebar` — esse wordmark/ícone de casa é o link de volta pra `/`. Toda página dentro de uma aba lê `tabId` via `useParams` e prefixa as chamadas de API com `/tabs/${tabId}/...`; os modais (`AddExpenseModal`, `AddDebtModal`, `AddDebtorModal`, `ManageCategoriesModal`, `PeriodSettingsModal`, `RegisterPaymentModal`) recebem `tabId` como prop pro mesmo fim.
 
 ## Estrutura
 
@@ -33,12 +48,16 @@ O conceito original era um "livro-caixa analógico" (papel, tinta, serifada Frau
 src/
   api/          # client.ts (axios + interceptor JWT), types.ts (espelha os DTOs do backend)
   context/      # AuthContext (login/registro/logout, hidrata via GET /auth/me), ThemeContext (dark/light)
-  components/   # Sidebar, AppLayout, modais (Add*, Manage*, PeriodSettings), CategoryBar, icons.tsx
-  pages/        # Login, Register, Gastos, Devedores, DevedorDetail
-  utils/        # format.ts (formatCurrency, formatDate — sempre pt-BR)
+  components/   # Sidebar, AppLayout, HomeLayout, DonutTabChart, modais (Add*, Manage*, Create*, PeriodSettings), CategoryBar (genérico: categoria OU aba), icons.tsx
+  pages/        # Login, Register, Home (radial), Overview (visão geral), Gastos, Devedores, DevedorDetail
+  utils/        # format.ts (formatCurrency, formatDate, formatMonthName — sempre pt-BR), colors.ts (paleta de cores compartilhada categorias/abas)
 ```
 
 Padrão de página: cada página de dados busca tudo via `useCallback` + `useEffect`, guarda em `useState` local, e re-chama `load()` depois de qualquer mutação (criar/editar/excluir) ao invés de atualizar o estado otimisticamente. Simples e suficiente pro tamanho atual do app.
+
+## `DonutTabChart` — o gráfico de rosca da tela inicial
+
+SVG puro (sem lib de gráfico), em `src/components/DonutTabChart.tsx`. Cada aba vira uma fatia cujo ângulo é proporcional a `totalGastoPeriodo` (vindo de `GET /dashboard/visao-geral`), com um piso mínimo de 8° pra aba com R$0 continuar visível/clicável — sem isso ela sumiria do gráfico. É uma rosca (donut), não uma pizza cheia, de propósito: sobra espaço no centro (a "rosquinha") pra um botão HTML absolutamente posicionado por cima do SVG ("Visão Geral" + total), sem competir com o hit-test das fatias.
 
 ## Autenticação
 

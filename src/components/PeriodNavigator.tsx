@@ -1,12 +1,18 @@
 import { useRef } from "react";
-import { FiscalPeriod } from "../api/types";
-import { formatDateLong } from "../utils/format";
+import { formatDateLong, formatMonthName } from "../utils/format";
 import { ChevronLeftIcon, ChevronRightIcon, SettingsIcon } from "./icons";
 
+interface LightPeriod {
+  key: string;
+  start?: string;
+  end?: string;
+  closingDay?: number;
+}
+
 interface Props {
-  period: FiscalPeriod;
+  period: LightPeriod;
   onNavigate: (periodKey: string) => void;
-  onOpenSettings: () => void;
+  onOpenSettings?: () => void;
 }
 
 function shiftPeriodKey(key: string, delta: number): string {
@@ -43,9 +49,13 @@ export function PeriodNavigator({ period, onNavigate, onOpenSettings }: Props) {
         aria-label="Escolher período"
       >
         <span className="text-[15px] font-semibold text-ink">
-          {formatDateLong(period.start)} – {formatDateLong(period.end)}
+          {period.start && period.end
+            ? `${formatDateLong(period.start)} – ${formatDateLong(period.end)}`
+            : formatMonthName(period.key)}
         </span>
-        <span className="text-xs text-ink-soft">Fecha todo dia {period.closingDay}</span>
+        {period.closingDay !== undefined && (
+          <span className="text-xs text-ink-soft">Fecha todo dia {period.closingDay}</span>
+        )}
         <input
           ref={monthInputRef}
           type="month"
@@ -65,9 +75,11 @@ export function PeriodNavigator({ period, onNavigate, onOpenSettings }: Props) {
         >
           <ChevronRightIcon className="h-[18px] w-[18px]" />
         </button>
-        <button onClick={onOpenSettings} className="icon-btn" aria-label="Configurações do período">
-          <SettingsIcon className="h-[17px] w-[17px]" />
-        </button>
+        {onOpenSettings && (
+          <button onClick={onOpenSettings} className="icon-btn" aria-label="Configurações do período">
+            <SettingsIcon className="h-[17px] w-[17px]" />
+          </button>
+        )}
       </div>
     </div>
   );

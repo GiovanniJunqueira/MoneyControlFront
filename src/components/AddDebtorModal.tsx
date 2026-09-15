@@ -3,11 +3,12 @@ import { Modal } from "./Modal";
 import { api, extractErrorMessage } from "../api/client";
 
 interface Props {
+  tabId: string;
   onClose: () => void;
   onSaved: () => void;
 }
 
-export function AddDebtorModal({ onClose, onSaved }: Props) {
+export function AddDebtorModal({ tabId, onClose, onSaved }: Props) {
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +19,7 @@ export function AddDebtorModal({ onClose, onSaved }: Props) {
     setError(null);
     setSaving(true);
     try {
-      await api.post("/debtors", { name, notes: notes || undefined });
+      await api.post(`/tabs/${tabId}/debtors`, { name, notes: notes || undefined });
       onSaved();
     } catch (err) {
       setError(extractErrorMessage(err));

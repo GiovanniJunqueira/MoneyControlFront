@@ -4,6 +4,7 @@ import { api, extractErrorMessage } from "../api/client";
 import { Category } from "../api/types";
 
 interface Props {
+  tabId: string;
   categories: Category[];
   onClose: () => void;
   onSaved: () => void;
@@ -13,7 +14,7 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function AddExpenseModal({ categories, onClose, onSaved }: Props) {
+export function AddExpenseModal({ tabId, categories, onClose, onSaved }: Props) {
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
@@ -30,7 +31,7 @@ export function AddExpenseModal({ categories, onClose, onSaved }: Props) {
     setError(null);
     setSaving(true);
     try {
-      await api.post("/expenses", {
+      await api.post(`/tabs/${tabId}/expenses`, {
         categoryId,
         amount: Number(amount.replace(",", ".")),
         description: description || undefined,

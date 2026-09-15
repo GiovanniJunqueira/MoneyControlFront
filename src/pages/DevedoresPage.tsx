@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { DebtorSummary } from "../api/types";
 import { AddDebtorModal } from "../components/AddDebtorModal";
@@ -7,16 +7,17 @@ import { PlusIcon, ChevronRightIcon } from "../components/icons";
 import { formatCurrency } from "../utils/format";
 
 export function DevedoresPage() {
+  const { tabId = "" } = useParams<{ tabId: string }>();
   const [debtors, setDebtors] = useState<DebtorSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await api.get<DebtorSummary[]>("/debtors");
+    const res = await api.get<DebtorSummary[]>(`/tabs/${tabId}/debtors`);
     setDebtors(res.data);
     setLoading(false);
-  }, []);
+  }, [tabId]);
 
   useEffect(() => {
     load();
@@ -50,7 +51,7 @@ export function DevedoresPage() {
           <ul className="divide-y divide-line/70">
             {debtors.map((d) => (
               <li key={d.id}>
-                <Link to={`/devedores/${d.id}`} className="list-row -mx-1 rounded-2xl px-1 transition-colors hover:bg-surface-soft">
+                <Link to={`/tabs/${tabId}/devedores/${d.id}`} className="list-row -mx-1 rounded-2xl px-1 transition-colors hover:bg-surface-soft">
                   <div className="min-w-0">
                     <p className="truncate text-[15px] font-medium text-ink">{d.name}</p>
                     <p className="text-xs text-ink-soft">
@@ -80,7 +81,7 @@ export function DevedoresPage() {
         </button>
       </div>
 
-      {showAdd && <AddDebtorModal onClose={() => setShowAdd(false)} onSaved={() => { setShowAdd(false); load(); }} />}
+      {showAdd && <AddDebtorModal tabId={tabId} onClose={() => setShowAdd(false)} onSaved={() => { setShowAdd(false); load(); }} />}
     </div>
   );
 }

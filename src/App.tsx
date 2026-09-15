@@ -3,8 +3,11 @@ import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AppLayout } from "./components/AppLayout";
+import { HomeLayout } from "./components/HomeLayout";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
+import { HomePage } from "./pages/HomePage";
+import { OverviewPage } from "./pages/OverviewPage";
 import { GastosPage } from "./pages/GastosPage";
 import { DevedoresPage } from "./pages/DevedoresPage";
 import { DevedorDetailPage } from "./pages/DevedorDetailPage";
@@ -18,11 +21,15 @@ export function App() {
           <Route path="/register" element={<RegisterPage />} />
 
           <Route element={<ProtectedRoute />}>
+            <Route element={<HomeLayout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/visao-geral" element={<OverviewPage />} />
+            </Route>
+
             <Route element={<AppLayout />}>
-              <Route path="/gastos" element={<GastosPage />} />
-              <Route path="/devedores" element={<DevedoresPage />} />
-              <Route path="/devedores/:id" element={<DevedorDetailPage />} />
-              <Route path="/" element={<Navigate to="/gastos" replace />} />
+              <Route path="/tabs/:tabId/gastos" element={<GastosPage />} />
+              <Route path="/tabs/:tabId/devedores" element={<DevedoresPage />} />
+              <Route path="/tabs/:tabId/devedores/:id" element={<DevedorDetailPage />} />
             </Route>
           </Route>
 

@@ -3,6 +3,7 @@ import { Modal } from "./Modal";
 import { api, extractErrorMessage } from "../api/client";
 
 interface Props {
+  tabId: string;
   debtorId: string;
   onClose: () => void;
   onSaved: () => void;
@@ -12,7 +13,7 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export function AddDebtModal({ debtorId, onClose, onSaved }: Props) {
+export function AddDebtModal({ tabId, debtorId, onClose, onSaved }: Props) {
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
   const [date, setDate] = useState(todayIso());
@@ -24,7 +25,7 @@ export function AddDebtModal({ debtorId, onClose, onSaved }: Props) {
     setError(null);
     setSaving(true);
     try {
-      await api.post("/debts", {
+      await api.post(`/tabs/${tabId}/debts`, {
         debtorId,
         amount: Number(amount.replace(",", ".")),
         reason,

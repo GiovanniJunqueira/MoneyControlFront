@@ -2,16 +2,16 @@ import { FormEvent, useState } from "react";
 import { Modal } from "./Modal";
 import { api, extractErrorMessage } from "../api/client";
 import { Category } from "../api/types";
-
-const SUGGESTED_COLORS = ["#FF3B30", "#FF9500", "#FFCC00", "#34C759", "#30B0C7", "#007AFF", "#5856D6", "#AF52DE"];
+import { SUGGESTED_COLORS } from "../utils/colors";
 
 interface Props {
+  tabId: string;
   categories: Category[];
   onClose: () => void;
   onChanged: () => void;
 }
 
-export function ManageCategoriesModal({ categories, onClose, onChanged }: Props) {
+export function ManageCategoriesModal({ tabId, categories, onClose, onChanged }: Props) {
   const [name, setName] = useState("");
   const [color, setColor] = useState(SUGGESTED_COLORS[0]);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +22,7 @@ export function ManageCategoriesModal({ categories, onClose, onChanged }: Props)
     setError(null);
     setSaving(true);
     try {
-      await api.post("/categories", { name, color });
+      await api.post(`/tabs/${tabId}/categories`, { name, color });
       setName("");
       onChanged();
     } catch (err) {
@@ -34,7 +34,7 @@ export function ManageCategoriesModal({ categories, onClose, onChanged }: Props)
 
   async function handleDelete(id: string) {
     try {
-      await api.delete(`/categories/${id}`);
+      await api.delete(`/tabs/${tabId}/categories/${id}`);
       onChanged();
     } catch (err) {
       setError(extractErrorMessage(err, "Não foi possível excluir essa categoria."));

@@ -3,13 +3,14 @@ import { Modal } from "./Modal";
 import { api, extractErrorMessage } from "../api/client";
 
 interface Props {
+  tabId: string;
   module: "gastos" | "devedores";
   currentClosingDay: number;
   onClose: () => void;
   onSaved: () => void;
 }
 
-export function PeriodSettingsModal({ module, currentClosingDay, onClose, onSaved }: Props) {
+export function PeriodSettingsModal({ tabId, module, currentClosingDay, onClose, onSaved }: Props) {
   const [closingDay, setClosingDay] = useState(currentClosingDay);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -19,7 +20,7 @@ export function PeriodSettingsModal({ module, currentClosingDay, onClose, onSave
     setError(null);
     setSaving(true);
     try {
-      await api.put(`/module-settings/${module}`, { closingDay });
+      await api.put(`/tabs/${tabId}/module-settings/${module}`, { closingDay });
       onSaved();
     } catch (err) {
       setError(extractErrorMessage(err));

@@ -87,3 +87,45 @@ export interface ModuleSettingsDto {
   module: "gastos" | "devedores";
   closingDay: number;
 }
+
+export interface Tab {
+  id: string;
+  name: string;
+  color: string | null;
+}
+
+export interface TabSummary {
+  id: string;
+  name: string;
+  color: string | null;
+  totalGastoPeriodo: number;
+  totalPendente: number;
+}
+
+export interface PessoaResumo {
+  debtorId: string;
+  nome: string;
+  totalDevido: number;
+  totalPago: number;
+  dividas: Debt[];
+}
+
+export interface DevedoresResumoDto {
+  totalEmprestado: number;
+  totalRecebido: number;
+  totalPendente: number;
+  quantidadePessoas: number;
+}
+
+export interface VisaoGeralResponse {
+  periodKey: string;
+  abas: TabSummary[];
+  resumoGastos: {
+    total: number;
+    quantidadeLancamentos: number;
+    mediaPorLancamento: number;
+  };
+  porCategoria: CategoriaResumo[];
+  resumoDevedores: DevedoresResumoDto;
+  porPessoa: PessoaResumo[];
+}

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { Category, GastosDashboard } from "../api/types";
 import { PeriodNavigator } from "../components/PeriodNavigator";
@@ -10,6 +11,7 @@ import { PlusIcon, TrashIcon } from "../components/icons";
 import { formatCurrency, formatDate } from "../utils/format";
 
 export function GastosPage() {
+  const { tabId = "" } = useParams<{ tabId: string }>();
   const [periodKey, setPeriodKey] = useState<string | undefined>(undefined);
   const [dashboard, setDashboard] = useState<GastosDashboard | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -22,20 +24,20 @@ export function GastosPage() {
   const load = useCallback(async () => {
     setLoading(true);
     const [dashRes, catRes] = await Promise.all([
-      api.get<GastosDashboard>("/dashboard/gastos", { params: periodKey ? { period: periodKey } : {} }),
-      api.get<Category[]>("/categories"),
+      api.get<GastosDashboard>(`/tabs/${tabId}/dashboard/gastos`, { params: periodKey ? { period: periodKey } : {} }),
+      api.get<Category[]>(`/tabs/${tabId}/categories`),
     ]);
     setDashboard(dashRes.data);
     setCategories(catRes.data);
     setLoading(false);
-  }, [periodKey]);
+  }, [tabId, periodKey]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   async function handleDeleteExpense(id: string) {
-    await api.delete(`/expenses/${id}`);
+    await api.delete(`/tabs/${tabId}/expenses/${id}`);
     load();
   }
 
@@ -80,7 +82,7 @@ export function GastosPage() {
           <h2 className="mb-1 text-base font-bold text-ink">Por categoria</h2>
           <div className="divide-y divide-line/70">
             {dashboard.porCategoria.map((c) => (
-              <CategoryBar key={c.categoryId} categoria={c} />
+              <CategoryBar key={c.categoryId} item={c} />
             ))}
           </div>
         </div>
@@ -136,13 +138,14 @@ export function GastosPage() {
       </div>
 
       {showAddExpense && (
-        <AddExpenseModal categories={categories} onClose={() => setShowAddExpense(false)} onSaved={() => { setShowAddExpense(false); load(); }} />
+        <AddExpenseModal tabId={tabId} categories={categories} onClose={() => setShowAddExpense(false)} onSaved={() => { setShowAddExpense(false); load(); }} />
       )}
       {showCategories && (
-        <ManageCategoriesModal categories={categories} onClose={() => setShowCategories(false)} onChanged={load} />
+        <ManageCategoriesModal tabId={tabId} categories={categories} onClose={() => setShowCategories(false)} onChanged={load} />
       )}
       {showSettings && (
         <PeriodSettingsModal
+          tabId={tabId}
           module="gastos"
           currentClosingDay={dashboard.period.closingDay}
           onClose={() => setShowSettings(false)}

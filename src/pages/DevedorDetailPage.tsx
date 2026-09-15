@@ -20,7 +20,7 @@ const STATUS_CLASS: Record<DebtStatus, string> = {
 };
 
 export function DevedorDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const { tabId = "", id } = useParams<{ tabId: string; id: string }>();
   const [debtor, setDebtor] = useState<DebtorDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAddDebt, setShowAddDebt] = useState(false);
@@ -29,17 +29,17 @@ export function DevedorDetailPage() {
   const load = useCallback(async () => {
     if (!id) return;
     setLoading(true);
-    const res = await api.get<DebtorDetail>(`/debtors/${id}`);
+    const res = await api.get<DebtorDetail>(`/tabs/${tabId}/debtors/${id}`);
     setDebtor(res.data);
     setLoading(false);
-  }, [id]);
+  }, [tabId, id]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   async function handleDeleteDebt(debtId: string) {
-    await api.delete(`/debts/${debtId}`);
+    await api.delete(`/tabs/${tabId}/debts/${debtId}`);
     load();
   }
 
@@ -50,7 +50,7 @@ export function DevedorDetailPage() {
 
   return (
     <div>
-      <Link to="/devedores" className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-ink-soft hover:text-ink">
+      <Link to={`/tabs/${tabId}/devedores`} className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-ink-soft hover:text-ink">
         <ArrowLeftIcon className="h-4 w-4" /> Devedores
       </Link>
 
@@ -115,10 +115,10 @@ export function DevedorDetailPage() {
       </div>
 
       {showAddDebt && debtor && (
-        <AddDebtModal debtorId={debtor.id} onClose={() => setShowAddDebt(false)} onSaved={() => { setShowAddDebt(false); load(); }} />
+        <AddDebtModal tabId={tabId} debtorId={debtor.id} onClose={() => setShowAddDebt(false)} onSaved={() => { setShowAddDebt(false); load(); }} />
       )}
       {payingDebt && (
-        <RegisterPaymentModal debt={payingDebt} onClose={() => setPayingDebt(null)} onSaved={() => { setPayingDebt(null); load(); }} />
+        <RegisterPaymentModal tabId={tabId} debt={payingDebt} onClose={() => setPayingDebt(null)} onSaved={() => { setPayingDebt(null); load(); }} />
       )}
     </div>
   );

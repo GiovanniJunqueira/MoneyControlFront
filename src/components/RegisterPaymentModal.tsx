@@ -5,12 +5,13 @@ import { Debt } from "../api/types";
 import { formatCurrency } from "../utils/format";
 
 interface Props {
+  tabId: string;
   debt: Debt;
   onClose: () => void;
   onSaved: () => void;
 }
 
-export function RegisterPaymentModal({ debt, onClose, onSaved }: Props) {
+export function RegisterPaymentModal({ tabId, debt, onClose, onSaved }: Props) {
   const restante = debt.amount - debt.paidAmount;
   const [amount, setAmount] = useState(restante.toFixed(2).replace(".", ","));
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +22,7 @@ export function RegisterPaymentModal({ debt, onClose, onSaved }: Props) {
     setError(null);
     setSaving(true);
     try {
-      await api.post(`/debts/${debt.id}/payments`, { amount: Number(amount.replace(",", ".")) });
+      await api.post(`/tabs/${tabId}/debts/${debt.id}/payments`, { amount: Number(amount.replace(",", ".")) });
       onSaved();
     } catch (err) {
       setError(extractErrorMessage(err));
