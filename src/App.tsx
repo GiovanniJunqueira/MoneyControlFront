@@ -14,6 +14,7 @@ import { GastosPage } from "./pages/GastosPage";
 import { DevedoresPage } from "./pages/DevedoresPage";
 import { DevedorDetailPage } from "./pages/DevedorDetailPage";
 import { BetsHomePage } from "./pages/BetsHomePage";
+import { BetMonthDetailPage } from "./pages/BetMonthDetailPage";
 
 export function App() {
   return (
@@ -38,6 +39,7 @@ export function App() {
 
             <Route element={<BetsLayout />}>
               <Route path="/bets" element={<BetsHomePage />} />
+              <Route path="/bets/months/:monthId" element={<BetMonthDetailPage />} />
             </Route>
           </Route>
 

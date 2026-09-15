@@ -1,7 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Modal } from "./Modal";
 import { api, extractErrorMessage } from "../api/client";
-import { BetMonth } from "../api/types";
 
 interface Props {
   currentValue: number;
@@ -19,7 +18,7 @@ export function ChangeUnitValueModal({ currentValue, onClose, onSaved }: Props) 
     setError(null);
     setSaving(true);
     try {
-      await api.put<BetMonth>("/bets/unit-value", { value: Number(value.replace(",", ".")) });
+      await api.put("/bets/unit-value", { value: Number(value.replace(",", ".")) });
       onSaved();
     } catch (err) {
       setError(extractErrorMessage(err));

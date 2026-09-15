@@ -153,34 +153,53 @@ export interface BetHouse {
   id: string;
   name: string;
   color: string | null;
+  position: number;
 }
 
-export interface BetHouseBalance {
-  id: string;
-  name: string;
-  color: string | null;
-  currentBalance: number;
-  currentBalanceUnits: number;
-  startOfDayBalance: number;
-  updatedToday: boolean;
+export interface BetOverview {
+  totalProfitLoss: number;
+  totalProfitLossUnits: number;
 }
 
-export interface BetMonth {
-  id: string;
-  startDate: string;
-  unitValue: number;
-  totalBanca: number;
-  totalBancaUnits: number;
-  profitLoss: number;
-  profitLossUnits: number;
-  houses: BetHouseBalance[];
-}
-
-export interface BetMonthHistory {
+export interface BetMonthSummary {
   id: string;
   startDate: string;
   endDate: string | null;
+  open: boolean;
   startingBanca: number;
   endingBanca: number;
   profitLoss: number;
+  profitLossUnits: number;
+}
+
+export interface BetMonthDayHouse {
+  houseId: string;
+  name: string;
+  color: string | null;
+  balance: number;
+  balanceUnits: number;
+  result: number;
+  resultUnits: number;
+}
+
+export interface BetMonthDay {
+  date: string;
+  unitValue: number;
+  total: number;
+  totalUnits: number;
+  result: number;
+  resultUnits: number;
+  houses: BetMonthDayHouse[];
+}
+
+export interface BetMonthDays {
+  monthId: string;
+  startDate: string;
+  endDate: string | null;
+  open: boolean;
+  startingBanca: number;
+  endingBanca: number;
+  profitLoss: number;
+  profitLossUnits: number;
+  days: BetMonthDay[];
 }

@@ -1,7 +1,7 @@
 import { FormEvent, useState } from "react";
 import { Modal } from "./Modal";
 import { api, extractErrorMessage } from "../api/client";
-import { BetMonth } from "../api/types";
+import { BetMonthSummary } from "../api/types";
 
 interface Props {
   hasOpenMonth: boolean;
@@ -19,7 +19,7 @@ export function StartBetMonthModal({ hasOpenMonth, onClose, onSaved }: Props) {
     setError(null);
     setSaving(true);
     try {
-      await api.post<BetMonth>("/bets/months", { initialUnitValue: Number(unitValue.replace(",", ".")) });
+      await api.post<BetMonthSummary>("/bets/months", { initialUnitValue: Number(unitValue.replace(",", ".")) });
       onSaved();
     } catch (err) {
       setError(extractErrorMessage(err));

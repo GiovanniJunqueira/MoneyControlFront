@@ -1,17 +1,30 @@
 import { FormEvent, useState } from "react";
 import { Modal } from "./Modal";
 import { api, extractErrorMessage } from "../api/client";
-import { BetHouseBalance } from "../api/types";
-import { formatCurrency } from "../utils/format";
+import { formatCurrency, formatDateLong } from "../utils/format";
 
 interface Props {
-  house: BetHouseBalance;
+  houseId: string;
+  houseName: string;
+  date: string;
+  isToday: boolean;
+  currentBalance: number;
+  startOfDayBalance: number;
   onClose: () => void;
   onSaved: () => void;
 }
 
-export function UpdateBetBalanceModal({ house, onClose, onSaved }: Props) {
-  const [balance, setBalance] = useState(house.currentBalance.toFixed(2).replace(".", ","));
+export function UpdateBetBalanceModal({
+  houseId,
+  houseName,
+  date,
+  isToday,
+  currentBalance,
+  startOfDayBalance,
+  onClose,
+  onSaved,
+}: Props) {
+  const [balance, setBalance] = useState(currentBalance.toFixed(2).replace(".", ","));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -20,7 +33,7 @@ export function UpdateBetBalanceModal({ house, onClose, onSaved }: Props) {
     setError(null);
     setSaving(true);
     try {
-      await api.post(`/bets/houses/${house.id}/balance`, { balance: Number(balance.replace(",", ".")) });
+      await api.post(`/bets/houses/${houseId}/balance`, { balance: Number(balance.replace(",", ".")), date });
       onSaved();
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -30,13 +43,13 @@ export function UpdateBetBalanceModal({ house, onClose, onSaved }: Props) {
   }
 
   return (
-    <Modal title={`Atualizar ${house.name}`} onClose={onClose}>
+    <Modal title={`Atualizar ${houseName}`} onClose={onClose}>
       <p className="mb-4 text-sm text-ink-soft">
-        Início do dia <span className="num">{formatCurrency(house.startOfDayBalance)}</span>
+        {isToday ? "Hoje" : formatDateLong(date)} · início do dia <span className="num">{formatCurrency(startOfDayBalance)}</span>
       </p>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="field-label" htmlFor="balance">Saldo atual na casa</label>
+          <label className="field-label" htmlFor="balance">Saldo final na casa</label>
           <input id="balance" required inputMode="decimal" className="field num" value={balance} onChange={(e) => setBalance(e.target.value)} />
         </div>
         {error && <p className="text-sm text-danger">{error}</p>}
