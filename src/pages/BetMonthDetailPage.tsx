@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { BetMonthDays, BetMonthDayHouse } from "../api/types";
@@ -23,16 +23,16 @@ export function BetMonthDetailPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [showChangeUnit, setShowChangeUnit] = useState(false);
   const [editing, setEditing] = useState<EditingState | null>(null);
+  const initialized = useRef(false);
 
   const load = useCallback(async () => {
     if (!monthId) return;
     const res = await api.get<BetMonthDays>(`/bets/months/${monthId}/days`);
     setData(res.data);
-    setExpanded((prev) => {
-      if (prev.size > 0) return prev;
-      const today = todayIso();
-      return res.data.open && res.data.days.some((d) => d.date === today) ? new Set([today]) : prev;
-    });
+    if (!initialized.current) {
+      initialized.current = true;
+      setExpanded(new Set(res.data.days.map((d) => d.date)));
+    }
   }, [monthId]);
 
   useEffect(() => {
@@ -108,13 +108,16 @@ export function BetMonthDetailPage() {
                     ) : (
                       day.houses.map((h) => {
                         const hPositivo = h.result >= 0;
+                        const opening = h.balance - h.result;
                         return (
                           <div key={h.houseId} className="flex items-center justify-between gap-2 py-1.5">
                             <span className="flex min-w-0 items-center gap-2">
                               <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: h.color || "#8E8E93" }} />
                               <span className="min-w-0">
                                 <span className="block truncate text-sm font-medium text-ink">{h.name}</span>
-                                <span className="num block text-xs text-ink-soft">{formatCurrency(h.balance)}</span>
+                                <span className="num block text-xs text-ink-soft">
+                                  {formatCurrency(opening)} → {formatCurrency(h.balance)}
+                                </span>
                               </span>
                             </span>
                             <span className="flex shrink-0 items-center gap-2">
@@ -124,7 +127,7 @@ export function BetMonthDetailPage() {
                               </span>
                               {data.open && (
                                 <button
-                                  onClick={() => setEditing({ house: h, date: day.date, startOfDay: h.balance - h.result })}
+                                  onClick={() => setEditing({ house: h, date: day.date, startOfDay: opening })}
                                   className="icon-btn h-8 w-8"
                                   aria-label={`Editar ${h.name}`}
                                 >

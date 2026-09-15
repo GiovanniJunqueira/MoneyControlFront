@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../api/client";
+import { api, extractErrorMessage } from "../api/client";
 import { BetMonthSummary, BetOverview } from "../api/types";
 import { CreateBetHouseModal } from "../components/CreateBetHouseModal";
 import { ManageBetHousesModal } from "../components/ManageBetHousesModal";
 import { StartBetMonthModal } from "../components/StartBetMonthModal";
-import { PlusIcon, SettingsIcon, ChevronRightIcon } from "../components/icons";
+import { PlusIcon, SettingsIcon, ChevronRightIcon, TrashIcon } from "../components/icons";
 import { formatCurrency, formatUnits, formatMonthName } from "../utils/format";
 
 export function BetsHomePage() {
@@ -16,6 +16,7 @@ export function BetsHomePage() {
   const [showCreateHouse, setShowCreateHouse] = useState(false);
   const [showManageHouses, setShowManageHouses] = useState(false);
   const [showStartMonth, setShowStartMonth] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -27,6 +28,19 @@ export function BetsHomePage() {
     setMonths(monthsRes.data);
     setLoading(false);
   }, []);
+
+  async function handleDeleteMonth(id: string, label: string) {
+    if (!window.confirm(`Excluir ${label}? Isso apaga todos os dias e saldos registrados nesse mês, sem volta.`)) {
+      return;
+    }
+    setError(null);
+    try {
+      await api.delete(`/bets/months/${id}`);
+      load();
+    } catch (err) {
+      setError(extractErrorMessage(err, "Não foi possível excluir esse mês."));
+    }
+  }
 
   useEffect(() => {
     load();
@@ -71,16 +85,15 @@ export function BetsHomePage() {
             <ul className="divide-y divide-line/70">
               {months.map((m) => {
                 const positivo = m.profitLoss >= 0;
+                const label = formatMonthName(m.startDate.slice(0, 7));
                 return (
-                  <li key={m.id}>
+                  <li key={m.id} className="flex items-center gap-1">
                     <button
                       onClick={() => navigate(`/bets/months/${m.id}`)}
-                      className="list-row -mx-1 w-[calc(100%+0.5rem)] rounded-2xl px-1 text-left transition-colors hover:bg-surface-soft active:bg-surface-soft"
+                      className="list-row -mx-1 min-w-0 flex-1 rounded-2xl px-1 text-left transition-colors hover:bg-surface-soft active:bg-surface-soft"
                     >
                       <span className="flex min-w-0 items-center gap-2">
-                        <span className="truncate text-[15px] font-medium text-ink">
-                          {formatMonthName(m.startDate.slice(0, 7))}
-                        </span>
+                        <span className="truncate text-[15px] font-medium text-ink">{label}</span>
                         {m.open && <span className="pill shrink-0 bg-accent-soft text-accent">Atual</span>}
                       </span>
                       <span className="flex shrink-0 items-center gap-1.5">
@@ -91,11 +104,19 @@ export function BetsHomePage() {
                         <ChevronRightIcon className="h-4 w-4 text-ink-soft" />
                       </span>
                     </button>
+                    <button
+                      onClick={() => handleDeleteMonth(m.id, label)}
+                      className="icon-btn h-8 w-8 shrink-0 text-danger"
+                      aria-label={`Excluir ${label}`}
+                    >
+                      <TrashIcon className="h-3.5 w-3.5" />
+                    </button>
                   </li>
                 );
               })}
             </ul>
           </div>
+          {error && <p className="mt-2 text-sm text-danger">{error}</p>}
 
           <button onClick={() => setShowStartMonth(true)} className="btn-secondary mt-4 w-full">
             Iniciar novo mês
