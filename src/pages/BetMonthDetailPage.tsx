@@ -125,7 +125,7 @@ export function BetMonthDetailPage() {
                                 {hPositivo ? "+" : ""}
                                 {formatUnits(h.resultUnits)}
                               </span>
-                              {data.open && (
+                              {day.date <= today && (
                                 <button
                                   onClick={() => setEditing({ house: h, date: day.date, startOfDay: opening })}
                                   className="icon-btn h-8 w-8"
@@ -154,8 +154,9 @@ export function BetMonthDetailPage() {
           onSaved={() => { setShowChangeUnit(false); load(); }}
         />
       )}
-      {editing && (
+      {editing && monthId && (
         <UpdateBetBalanceModal
+          monthId={monthId}
           houseId={editing.house.houseId}
           houseName={editing.house.name}
           date={editing.date}

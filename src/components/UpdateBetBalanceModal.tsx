@@ -4,6 +4,7 @@ import { api, extractErrorMessage } from "../api/client";
 import { formatDateLong } from "../utils/format";
 
 interface Props {
+  monthId: string;
   houseId: string;
   houseName: string;
   date: string;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function UpdateBetBalanceModal({
+  monthId,
   houseId,
   houseName,
   date,
@@ -25,7 +27,6 @@ export function UpdateBetBalanceModal({
   onSaved,
 }: Props) {
   const [opening, setOpening] = useState(startOfDayBalance.toFixed(2).replace(".", ","));
-  const [openingTouched, setOpeningTouched] = useState(false);
   const [balance, setBalance] = useState(currentBalance.toFixed(2).replace(".", ","));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -35,10 +36,15 @@ export function UpdateBetBalanceModal({
     setError(null);
     setSaving(true);
     try {
-      await api.post(`/bets/houses/${houseId}/balance`, {
+      const openingValue = Number(opening.replace(",", "."));
+      // Só manda o ajuste se o valor realmente mudou do que já estava calculado — assim, se a pessoa
+      // não mexer nesse campo, o saldo inicial continua automático (carry-forward do dia anterior),
+      // mesmo que um dia anterior seja editado depois.
+      const unchanged = Math.abs(openingValue - startOfDayBalance) < 0.005;
+      await api.post(`/bets/months/${monthId}/houses/${houseId}/balance`, {
         balance: Number(balance.replace(",", ".")),
         date,
-        openingBalance: openingTouched ? Number(opening.replace(",", ".")) : null,
+        openingBalance: unchanged ? null : openingValue,
       });
       onSaved();
     } catch (err) {
@@ -60,10 +66,7 @@ export function UpdateBetBalanceModal({
             inputMode="decimal"
             className="field num"
             value={opening}
-            onChange={(e) => {
-              setOpening(e.target.value);
-              setOpeningTouched(true);
-            }}
+            onChange={(e) => setOpening(e.target.value)}
           />
           <p className="mt-1 text-xs text-ink-soft">
             Só muda isso se fez um depósito/saque na casa — assim a diferença não conta como resultado da aposta.
