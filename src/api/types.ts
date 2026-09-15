@@ -2,6 +2,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  betsEnabled: boolean;
 }
 
 export interface AuthResponse {

@@ -5,11 +5,13 @@ import { Tab, VisaoGeralResponse } from "../api/types";
 import { DonutTabChart } from "../components/DonutTabChart";
 import { CreateTabModal } from "../components/CreateTabModal";
 import { ManageTabsModal } from "../components/ManageTabsModal";
+import { PeriodNavigator } from "../components/PeriodNavigator";
 import { PlusIcon, SettingsIcon, ChevronRightIcon, UsersIcon } from "../components/icons";
 import { formatCurrency } from "../utils/format";
 
 export function HomePage() {
   const navigate = useNavigate();
+  const [periodKey, setPeriodKey] = useState<string | undefined>(undefined);
   const [data, setData] = useState<VisaoGeralResponse | null>(null);
   const [tabs, setTabs] = useState<Tab[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,13 +21,13 @@ export function HomePage() {
   const load = useCallback(async () => {
     setLoading(true);
     const [visaoRes, tabsRes] = await Promise.all([
-      api.get<VisaoGeralResponse>("/dashboard/visao-geral"),
+      api.get<VisaoGeralResponse>("/dashboard/visao-geral", { params: periodKey ? { period: periodKey } : {} }),
       api.get<Tab[]>("/tabs"),
     ]);
     setData(visaoRes.data);
     setTabs(tabsRes.data);
     setLoading(false);
-  }, []);
+  }, [periodKey]);
 
   useEffect(() => {
     load();
@@ -38,7 +40,9 @@ export function HomePage() {
 
   return (
     <div className="pt-2">
-      <p className="mb-8 text-center text-ink-soft">Escolha uma aba ou veja a visão geral.</p>
+      <p className="mb-4 text-center text-ink-soft">Escolha uma aba ou veja a visão geral.</p>
+
+      <PeriodNavigator period={{ key: data.periodKey }} onNavigate={setPeriodKey} />
 
       <DonutTabChart
         abas={data.abas}

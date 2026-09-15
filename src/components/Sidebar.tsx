@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { Link, NavLink, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useTheme } from "../context/ThemeContext";
 import { Tab } from "../api/types";
-import { WalletIcon, UsersIcon, SunIcon, MoonIcon, HomeIcon } from "./icons";
+import { WalletIcon, UsersIcon, SettingsIcon, HomeIcon } from "./icons";
+import { SettingsModal } from "./SettingsModal";
 
 interface Props {
   tab: Tab | null;
@@ -11,7 +12,7 @@ interface Props {
 export function Sidebar({ tab }: Props) {
   const { tabId } = useParams<{ tabId: string }>();
   const { user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
+  const [showSettings, setShowSettings] = useState(false);
 
   const navItems = [
     { to: `/tabs/${tabId}/gastos`, label: "Gastos", icon: WalletIcon },
@@ -27,8 +28,8 @@ export function Sidebar({ tab }: Props) {
             <HomeIcon className="h-[18px] w-[18px] shrink-0" />
             <span className="truncate text-[15px] font-bold tracking-tight text-ink">{tab?.name ?? "Financeiro"}</span>
           </Link>
-          <button onClick={toggleTheme} className="icon-btn shrink-0" aria-label="Alternar tema">
-            {theme === "dark" ? <SunIcon className="h-[18px] w-[18px]" /> : <MoonIcon className="h-[18px] w-[18px]" />}
+          <button onClick={() => setShowSettings(true)} className="icon-btn shrink-0" aria-label="Configurações">
+            <SettingsIcon className="h-[18px] w-[18px]" />
           </button>
         </div>
 
@@ -63,8 +64,8 @@ export function Sidebar({ tab }: Props) {
           <HomeIcon className="h-[18px] w-[18px] shrink-0 text-ink-soft" />
           <span className="truncate text-lg font-bold tracking-tight text-ink">{tab?.name ?? "Financeiro"}</span>
         </Link>
-        <button onClick={toggleTheme} className="icon-btn shrink-0 bg-surface shadow-sm" aria-label="Alternar tema">
-          {theme === "dark" ? <SunIcon className="h-[18px] w-[18px]" /> : <MoonIcon className="h-[18px] w-[18px]" />}
+        <button onClick={() => setShowSettings(true)} className="icon-btn shrink-0 bg-surface shadow-sm" aria-label="Configurações">
+          <SettingsIcon className="h-[18px] w-[18px]" />
         </button>
       </div>
 
@@ -85,6 +86,8 @@ export function Sidebar({ tab }: Props) {
           <span className="text-ink-soft">Início</span>
         </NavLink>
       </nav>
+
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </>
   );
 }
