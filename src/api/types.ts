@@ -192,6 +192,14 @@ export interface BetMonthDay {
   houses: BetMonthDayHouse[];
 }
 
+export interface BetHouseMonthSummary {
+  houseId: string;
+  name: string;
+  color: string | null;
+  totalResult: number;
+  totalResultUnits: number;
+}
+
 export interface BetMonthDays {
   monthId: string;
   startDate: string;
@@ -201,5 +209,6 @@ export interface BetMonthDays {
   endingBanca: number;
   profitLoss: number;
   profitLossUnits: number;
+  houseSummaries: BetHouseMonthSummary[];
   days: BetMonthDay[];
 }

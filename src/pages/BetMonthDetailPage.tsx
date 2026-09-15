@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { BetMonthDays, BetMonthDayHouse } from "../api/types";
@@ -23,16 +23,11 @@ export function BetMonthDetailPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [showChangeUnit, setShowChangeUnit] = useState(false);
   const [editing, setEditing] = useState<EditingState | null>(null);
-  const initialized = useRef(false);
 
   const load = useCallback(async () => {
     if (!monthId) return;
     const res = await api.get<BetMonthDays>(`/bets/months/${monthId}/days`);
     setData(res.data);
-    if (!initialized.current) {
-      initialized.current = true;
-      setExpanded(new Set(res.data.days.map((d) => d.date)));
-    }
   }, [monthId]);
 
   useEffect(() => {
@@ -54,6 +49,9 @@ export function BetMonthDetailPage() {
 
   const positivo = data.profitLoss >= 0;
   const today = todayIso();
+  // data.days vem do backend mais recente primeiro (o índice 0 é usado pra "unidade atual");
+  // aqui só invertemos a ORDEM DE EXIBIÇÃO (dia 1 no topo), sem mexer no array original.
+  const daysAscending = [...data.days].reverse();
   const currentUnitValue = data.days[0]?.unitValue ?? 0;
 
   return (
@@ -77,74 +75,97 @@ export function BetMonthDetailPage() {
         </button>
       )}
 
-      <div className="card">
-        <ul className="divide-y divide-line/70">
-          {data.days.map((day) => {
-            const isOpen = expanded.has(day.date);
-            const dayPositivo = day.result >= 0;
-            return (
-              <li key={day.date}>
-                <button
-                  onClick={() => toggle(day.date)}
-                  className="list-row w-full text-left"
-                  aria-expanded={isOpen}
-                >
-                  <span className="flex items-center gap-2 text-[15px] font-medium text-ink">
-                    {formatDate(day.date)}
-                    {day.date === today && <span className="pill bg-accent-soft text-accent">Hoje</span>}
+      {data.houseSummaries.length > 0 && (
+        <div className="card mb-4">
+          <p className="mb-2 text-sm font-semibold text-ink">Geral do mês, por casa</p>
+          <ul className="divide-y divide-line/70">
+            {data.houseSummaries.map((h) => {
+              const hPositivo = h.totalResult >= 0;
+              return (
+                <li key={h.houseId} className="flex items-center justify-between gap-2 py-2">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: h.color || "#8E8E93" }} />
+                    <span className="truncate text-[15px] font-medium text-ink">{h.name}</span>
                   </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className={`num text-[15px] ${dayPositivo ? "text-success" : "text-danger"}`}>
-                      {dayPositivo ? "+" : ""}
-                      {formatUnits(day.resultUnits)}
+                  <span className="flex shrink-0 items-center gap-2">
+                    <span className={`num text-[15px] ${hPositivo ? "text-success" : "text-danger"}`}>
+                      {hPositivo ? "+" : ""}
+                      {formatUnits(h.totalResultUnits)}
                     </span>
-                    <ChevronRightIcon className={`h-4 w-4 shrink-0 text-ink-soft transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                    <span className={`num text-xs ${hPositivo ? "text-success" : "text-danger"}`}>
+                      ({hPositivo ? "+" : ""}
+                      {formatCurrency(h.totalResult)})
+                    </span>
                   </span>
-                </button>
-                {isOpen && (
-                  <div className="-mt-1 mb-3 space-y-1 rounded-2xl bg-surface-soft p-3">
-                    {day.houses.length === 0 ? (
-                      <p className="py-2 text-center text-sm text-ink-soft">Nenhuma casa cadastrada.</p>
-                    ) : (
-                      day.houses.map((h) => {
-                        const hPositivo = h.result >= 0;
-                        const opening = h.balance - h.result;
-                        return (
-                          <div key={h.houseId} className="flex items-center justify-between gap-2 py-1.5">
-                            <span className="flex min-w-0 items-center gap-2">
-                              <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: h.color || "#8E8E93" }} />
-                              <span className="min-w-0">
-                                <span className="block truncate text-sm font-medium text-ink">{h.name}</span>
-                                <span className="num block text-xs text-ink-soft">
-                                  {formatCurrency(opening)} → {formatCurrency(h.balance)}
-                                </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {daysAscending.map((day) => {
+          const isOpen = expanded.has(day.date);
+          const dayPositivo = day.result >= 0;
+          return (
+            <div key={day.date} className="card">
+              <button onClick={() => toggle(day.date)} className="flex w-full items-center justify-between gap-3 text-left" aria-expanded={isOpen}>
+                <span className="flex items-center gap-2 text-[15px] font-medium text-ink">
+                  {formatDate(day.date)}
+                  {day.date === today && <span className="pill bg-accent-soft text-accent">Hoje</span>}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className={`num text-[15px] ${dayPositivo ? "text-success" : "text-danger"}`}>
+                    {dayPositivo ? "+" : ""}
+                    {formatUnits(day.resultUnits)}
+                  </span>
+                  <ChevronRightIcon className={`h-4 w-4 shrink-0 text-ink-soft transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                </span>
+              </button>
+              {isOpen && (
+                <div className="-mx-1 mt-3 space-y-1 rounded-2xl bg-surface-soft p-3">
+                  {day.houses.length === 0 ? (
+                    <p className="py-2 text-center text-sm text-ink-soft">Nenhuma casa cadastrada.</p>
+                  ) : (
+                    day.houses.map((h) => {
+                      const hPositivo = h.result >= 0;
+                      const opening = h.balance - h.result;
+                      return (
+                        <div key={h.houseId} className="flex items-center justify-between gap-2 py-1.5">
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: h.color || "#8E8E93" }} />
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-medium text-ink">{h.name}</span>
+                              <span className="num block text-xs text-ink-soft">
+                                {formatCurrency(opening)} → {formatCurrency(h.balance)}
                               </span>
                             </span>
-                            <span className="flex shrink-0 items-center gap-2">
-                              <span className={`num text-sm ${hPositivo ? "text-success" : "text-danger"}`}>
-                                {hPositivo ? "+" : ""}
-                                {formatUnits(h.resultUnits)}
-                              </span>
-                              {day.date <= today && (
-                                <button
-                                  onClick={() => setEditing({ house: h, date: day.date, startOfDay: opening })}
-                                  className="icon-btn h-8 w-8"
-                                  aria-label={`Editar ${h.name}`}
-                                >
-                                  <PencilIcon className="h-3.5 w-3.5" />
-                                </button>
-                              )}
+                          </span>
+                          <span className="flex shrink-0 items-center gap-2">
+                            <span className={`num text-sm ${hPositivo ? "text-success" : "text-danger"}`}>
+                              {hPositivo ? "+" : ""}
+                              {formatUnits(h.resultUnits)}
                             </span>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                )}
-              </li>
-            );
-          })}
-        </ul>
+                            {day.date <= today && (
+                              <button
+                                onClick={() => setEditing({ house: h, date: day.date, startOfDay: opening })}
+                                className="icon-btn h-8 w-8"
+                                aria-label={`Editar ${h.name}`}
+                              >
+                                <PencilIcon className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {showChangeUnit && (
