@@ -61,16 +61,25 @@ export function DonutTabChart({ abas, onSelect, onCenterClick, totalGeral }: Pro
             key={aba.id}
             d={describeSlice(startAngle, endAngle)}
             fill={aba.color || "#8E8E93"}
-            className="cursor-pointer transition-opacity hover:opacity-80"
+            className="cursor-pointer transition-opacity hover:opacity-80 active:opacity-60"
+            role="button"
+            tabIndex={0}
+            aria-label={`Abrir aba ${aba.name}`}
             onClick={() => onSelect(aba.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onSelect(aba.id);
+              }
+            }}
           />
         ))}
       </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
         <button
           onClick={onCenterClick}
           style={{ width: "58%", height: "58%" }}
-          className="flex flex-col items-center justify-center rounded-full bg-surface text-center shadow-sm shadow-black/5 ring-1 ring-line/70 transition-transform active:scale-95"
+          className="pointer-events-auto flex flex-col items-center justify-center rounded-full bg-surface text-center shadow-sm shadow-black/5 ring-1 ring-line/70 transition-transform active:scale-95"
         >
           <span className="text-[13px] font-semibold text-ink-soft">Visão Geral</span>
           <span className="num mt-0.5 px-2 text-lg text-ink">{formatCurrency(totalGeral)}</span>

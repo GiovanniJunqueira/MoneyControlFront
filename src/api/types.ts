@@ -129,3 +129,19 @@ export interface VisaoGeralResponse {
   resumoDevedores: DevedoresResumoDto;
   porPessoa: PessoaResumo[];
 }
+
+export interface DevedoresDashboard {
+  period: FiscalPeriod;
+  resumo: DevedoresResumoDto;
+  porPessoa: PessoaResumo[];
+}
+
+export interface DevedorGeral {
+  debtorId: string;
+  nome: string;
+  totalDevido: number;
+  quantidadeDividas: number;
+  tabId: string;
+  tabName: string;
+  tabColor: string | null;
+}

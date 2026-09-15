@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { VisaoGeralResponse } from "../api/types";
 import { PeriodNavigator } from "../components/PeriodNavigator";
 import { CategoryBar } from "../components/CategoryBar";
+import { ArrowLeftIcon } from "../components/icons";
 import { formatCurrency } from "../utils/format";
 
 export function OverviewPage() {
@@ -30,6 +32,10 @@ export function OverviewPage() {
 
   return (
     <div>
+      <Link to="/" className="mb-4 inline-flex items-center gap-1 text-sm font-medium text-ink-soft hover:text-ink">
+        <ArrowLeftIcon className="h-4 w-4" /> Início
+      </Link>
+
       <div className="mb-6">
         <h1 className="text-3xl font-extrabold tracking-tight text-ink">Visão Geral</h1>
         <p className="mt-1 text-ink-soft">A soma de todas as suas abas.</p>

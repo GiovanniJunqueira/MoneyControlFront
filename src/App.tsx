@@ -8,6 +8,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { HomePage } from "./pages/HomePage";
 import { OverviewPage } from "./pages/OverviewPage";
+import { DevedoresGeralPage } from "./pages/DevedoresGeralPage";
 import { GastosPage } from "./pages/GastosPage";
 import { DevedoresPage } from "./pages/DevedoresPage";
 import { DevedorDetailPage } from "./pages/DevedorDetailPage";
@@ -24,6 +25,7 @@ export function App() {
             <Route element={<HomeLayout />}>
               <Route path="/" element={<HomePage />} />
               <Route path="/visao-geral" element={<OverviewPage />} />
+              <Route path="/devedores" element={<DevedoresGeralPage />} />
             </Route>
 
             <Route element={<AppLayout />}>

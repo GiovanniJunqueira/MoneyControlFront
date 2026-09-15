@@ -1,29 +1,43 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
-import { DebtorSummary } from "../api/types";
+import { DebtorSummary, DevedoresDashboard } from "../api/types";
 import { AddDebtorModal } from "../components/AddDebtorModal";
+import { PeriodNavigator } from "../components/PeriodNavigator";
+import { PeriodSettingsModal } from "../components/PeriodSettingsModal";
 import { PlusIcon, ChevronRightIcon } from "../components/icons";
 import { formatCurrency } from "../utils/format";
 
 export function DevedoresPage() {
   const { tabId = "" } = useParams<{ tabId: string }>();
+  const [periodKey, setPeriodKey] = useState<string | undefined>(undefined);
+  const [dashboard, setDashboard] = useState<DevedoresDashboard | null>(null);
   const [debtors, setDebtors] = useState<DebtorSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await api.get<DebtorSummary[]>(`/tabs/${tabId}/debtors`);
-    setDebtors(res.data);
+    const [dashRes, debtorsRes] = await Promise.all([
+      api.get<DevedoresDashboard>(`/tabs/${tabId}/dashboard/devedores`, { params: periodKey ? { period: periodKey } : {} }),
+      api.get<DebtorSummary[]>(`/tabs/${tabId}/debtors`),
+    ]);
+    setDashboard(dashRes.data);
+    setDebtors(debtorsRes.data);
     setLoading(false);
-  }, [tabId]);
+  }, [tabId, periodKey]);
 
   useEffect(() => {
     load();
   }, [load]);
 
   const totalPendente = debtors.reduce((sum, d) => sum + d.totalDevido, 0);
+
+  if (loading && !dashboard) {
+    return <p className="text-ink-soft">Carregando…</p>;
+  }
+  if (!dashboard) return null;
 
   return (
     <div>
@@ -37,15 +51,27 @@ export function DevedoresPage() {
         </button>
       </div>
 
+      <PeriodNavigator period={dashboard.period} onNavigate={setPeriodKey} onOpenSettings={() => setShowSettings(true)} />
+
+      <div className="mb-4 grid grid-cols-2 gap-3">
+        <div className="card">
+          <p className="text-sm text-ink-soft">Emprestado no período</p>
+          <p className="num mt-1 text-2xl text-ink">{formatCurrency(dashboard.resumo.totalEmprestado)}</p>
+        </div>
+        <div className="card">
+          <p className="text-sm text-ink-soft">Recebido no período</p>
+          <p className="num mt-1 text-2xl text-success">{formatCurrency(dashboard.resumo.totalRecebido)}</p>
+        </div>
+      </div>
+
       <div className="card mb-4">
-        <p className="text-sm text-ink-soft">Total pendente</p>
+        <p className="text-sm text-ink-soft">Total pendente (todas as dívidas em aberto)</p>
         <p className="num mt-1 text-2xl text-danger">{formatCurrency(totalPendente)}</p>
       </div>
 
       <div className="card">
-        {loading ? (
-          <p className="py-2 text-sm text-ink-soft">Carregando…</p>
-        ) : debtors.length === 0 ? (
+        <h2 className="mb-1 text-base font-bold text-ink">Pessoas</h2>
+        {debtors.length === 0 ? (
           <p className="py-6 text-sm text-ink-soft">Ninguém te deve nada por aqui ainda.</p>
         ) : (
           <ul className="divide-y divide-line/70">
@@ -82,6 +108,15 @@ export function DevedoresPage() {
       </div>
 
       {showAdd && <AddDebtorModal tabId={tabId} onClose={() => setShowAdd(false)} onSaved={() => { setShowAdd(false); load(); }} />}
+      {showSettings && (
+        <PeriodSettingsModal
+          tabId={tabId}
+          module="devedores"
+          currentClosingDay={dashboard.period.closingDay}
+          onClose={() => setShowSettings(false)}
+          onSaved={() => { setShowSettings(false); load(); }}
+        />
+      )}
     </div>
   );
 }
