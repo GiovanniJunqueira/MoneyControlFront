@@ -246,3 +246,31 @@ export interface BetMonthDays {
   groupSummaries: BetHouseGroupMonthSummary[];
   days: BetMonthDay[];
 }
+
+export interface BetCompetition {
+  id: string;
+  name: string;
+  code: string;
+  year: number;
+  month: number;
+  isCreator: boolean;
+}
+
+export interface BetCompetitionRankingEntry {
+  position: number;
+  userId: string;
+  userName: string;
+  isYou: boolean;
+  hasData: boolean;
+  profitLoss: number;
+  profitLossUnits: number;
+}
+
+export interface BetCompetitionRanking {
+  id: string;
+  name: string;
+  code: string;
+  year: number;
+  month: number;
+  ranking: BetCompetitionRankingEntry[];
+}

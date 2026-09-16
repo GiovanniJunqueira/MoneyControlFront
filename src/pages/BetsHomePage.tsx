@@ -5,7 +5,7 @@ import { BetMonthSummary, BetOverview } from "../api/types";
 import { CreateBetHouseModal } from "../components/CreateBetHouseModal";
 import { ManageBetHousesModal } from "../components/ManageBetHousesModal";
 import { StartBetMonthModal } from "../components/StartBetMonthModal";
-import { PlusIcon, SettingsIcon, ChevronRightIcon, TrashIcon } from "../components/icons";
+import { PlusIcon, SettingsIcon, ChevronRightIcon, TrashIcon, UsersIcon } from "../components/icons";
 import { formatCurrency, formatUnits, formatMonthName } from "../utils/format";
 
 export function BetsHomePage() {
@@ -122,7 +122,11 @@ export function BetsHomePage() {
         </>
       )}
 
-      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+      <button onClick={() => navigate("/bets/competitions")} className="btn-secondary mt-4 w-full gap-1.5">
+        <UsersIcon className="h-4 w-4" /> Competições
+      </button>
+
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
         <button onClick={() => setShowManageHouses(true)} className="btn-secondary flex-1 gap-1.5">
           <SettingsIcon className="h-4 w-4" /> Gerenciar casas
         </button>

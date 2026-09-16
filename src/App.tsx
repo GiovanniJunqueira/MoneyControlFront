@@ -15,6 +15,8 @@ import { DevedoresPage } from "./pages/DevedoresPage";
 import { DevedorDetailPage } from "./pages/DevedorDetailPage";
 import { BetsHomePage } from "./pages/BetsHomePage";
 import { BetMonthDetailPage } from "./pages/BetMonthDetailPage";
+import { BetCompetitionsPage } from "./pages/BetCompetitionsPage";
+import { BetCompetitionDetailPage } from "./pages/BetCompetitionDetailPage";
 
 export function App() {
   return (
@@ -40,6 +42,8 @@ export function App() {
             <Route element={<BetsLayout />}>
               <Route path="/bets" element={<BetsHomePage />} />
               <Route path="/bets/months/:monthId" element={<BetMonthDetailPage />} />
+              <Route path="/bets/competitions" element={<BetCompetitionsPage />} />
+              <Route path="/bets/competitions/:id" element={<BetCompetitionDetailPage />} />
             </Route>
           </Route>
 
