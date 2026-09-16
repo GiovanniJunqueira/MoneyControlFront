@@ -92,10 +92,13 @@ export function BetMonthDetailPage() {
 
       <div className="mb-6">
         <h1 className="text-3xl font-extrabold tracking-tight text-ink">{formatMonthName(data.startDate.slice(0, 7))}</h1>
-        <p className={`num mt-1 text-lg font-semibold ${positivo ? "text-success" : "text-danger"}`}>
-          {positivo ? "+" : ""}
-          {formatUnits(data.profitLossUnits)} · {positivo ? "+" : ""}
-          {formatCurrency(data.profitLoss)}
+        <p className="mt-1 flex flex-wrap items-baseline gap-x-2">
+          <span className={`num text-lg font-semibold ${positivo ? "text-success" : "text-danger"}`}>
+            {positivo ? "+" : ""}
+            {formatUnits(data.profitLossUnits)} · {positivo ? "+" : ""}
+            {formatCurrency(data.profitLoss)}
+          </span>
+          <span className="num text-sm text-ink-soft">banca: {formatCurrency(data.endingBanca)}</span>
         </p>
       </div>
 
