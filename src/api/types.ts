@@ -154,6 +154,13 @@ export interface BetHouse {
   name: string;
   color: string | null;
   position: number;
+  groupId: string | null;
+  groupName: string | null;
+}
+
+export interface BetHouseGroup {
+  id: string;
+  name: string;
 }
 
 export interface BetOverview {
@@ -181,6 +188,17 @@ export interface BetMonthDayHouse {
   result: number;
   resultUnits: number;
   openingOverride: number | null;
+  groupId: string | null;
+  groupName: string | null;
+}
+
+export interface BetMonthDayGroup {
+  groupId: string;
+  name: string;
+  total: number;
+  totalUnits: number;
+  result: number;
+  resultUnits: number;
 }
 
 export interface BetMonthDay {
@@ -191,12 +209,22 @@ export interface BetMonthDay {
   result: number;
   resultUnits: number;
   houses: BetMonthDayHouse[];
+  groups: BetMonthDayGroup[];
 }
 
 export interface BetHouseMonthSummary {
   houseId: string;
   name: string;
   color: string | null;
+  totalResult: number;
+  totalResultUnits: number;
+  groupId: string | null;
+  groupName: string | null;
+}
+
+export interface BetHouseGroupMonthSummary {
+  groupId: string;
+  name: string;
   totalResult: number;
   totalResultUnits: number;
 }
@@ -211,5 +239,6 @@ export interface BetMonthDays {
   profitLoss: number;
   profitLossUnits: number;
   houseSummaries: BetHouseMonthSummary[];
+  groupSummaries: BetHouseGroupMonthSummary[];
   days: BetMonthDay[];
 }

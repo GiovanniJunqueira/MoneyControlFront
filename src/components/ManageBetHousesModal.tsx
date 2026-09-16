@@ -1,7 +1,7 @@
 import { PointerEvent, useEffect, useRef, useState } from "react";
 import { Modal } from "./Modal";
 import { api, extractErrorMessage } from "../api/client";
-import { BetHouse } from "../api/types";
+import { BetHouse, BetHouseGroup } from "../api/types";
 import { SUGGESTED_COLORS } from "../utils/colors";
 import { GripIcon, PencilIcon, XIcon } from "./icons";
 
@@ -10,11 +10,17 @@ interface Props {
   onChanged: () => void;
 }
 
+const NO_GROUP = "";
+const NEW_GROUP = "__new__";
+
 export function ManageBetHousesModal({ onClose, onChanged }: Props) {
   const [houses, setHouses] = useState<BetHouse[] | null>(null);
+  const [groups, setGroups] = useState<BetHouseGroup[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [color, setColor] = useState(SUGGESTED_COLORS[0]);
+  const [groupSelection, setGroupSelection] = useState(NO_GROUP);
+  const [newGroupName, setNewGroupName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -24,12 +30,15 @@ export function ManageBetHousesModal({ onClose, onChanged }: Props) {
 
   useEffect(() => {
     api.get<BetHouse[]>("/bets/houses").then((res) => setHouses(res.data));
+    api.get<BetHouseGroup[]>("/bets/groups").then((res) => setGroups(res.data));
   }, []);
 
   function startEdit(house: BetHouse) {
     setEditingId(house.id);
     setName(house.name);
     setColor(house.color || SUGGESTED_COLORS[0]);
+    setGroupSelection(house.groupId || NO_GROUP);
+    setNewGroupName("");
     setError(null);
   }
 
@@ -37,8 +46,20 @@ export function ManageBetHousesModal({ onClose, onChanged }: Props) {
     setError(null);
     setSaving(true);
     try {
+      let groupId: string | null = groupSelection || null;
+      if (groupSelection === NEW_GROUP) {
+        if (!newGroupName.trim()) {
+          setError("Digite um nome pro grupo novo.");
+          setSaving(false);
+          return;
+        }
+        const groupRes = await api.post<BetHouseGroup>("/bets/groups", { name: newGroupName.trim() });
+        setGroups((prev) => [...prev, groupRes.data]);
+        groupId = groupRes.data.id;
+      }
       const res = await api.put<BetHouse>(`/bets/houses/${id}`, { name, color });
-      setHouses((prev) => prev?.map((h) => (h.id === id ? res.data : h)) ?? null);
+      const res2 = await api.put<BetHouse>(`/bets/houses/${id}/group`, { groupId });
+      setHouses((prev) => prev?.map((h) => (h.id === id ? { ...res.data, groupId: res2.data.groupId, groupName: res2.data.groupName } : h)) ?? null);
       setEditingId(null);
       onChanged();
     } catch (err) {
@@ -143,6 +164,32 @@ export function ManageBetHousesModal({ onClose, onChanged }: Props) {
                         />
                       ))}
                     </div>
+                    <div>
+                      <label className="field-label" htmlFor={`group-${house.id}`}>Grupo</label>
+                      <select
+                        id={`group-${house.id}`}
+                        className="field"
+                        value={groupSelection}
+                        onChange={(e) => setGroupSelection(e.target.value)}
+                      >
+                        <option value={NO_GROUP}>Sem grupo</option>
+                        {groups.map((g) => (
+                          <option key={g.id} value={g.id}>{g.name}</option>
+                        ))}
+                        <option value={NEW_GROUP}>+ Criar novo grupo…</option>
+                      </select>
+                      {groupSelection === NEW_GROUP && (
+                        <input
+                          className="field mt-2"
+                          placeholder="Nome do grupo"
+                          value={newGroupName}
+                          onChange={(e) => setNewGroupName(e.target.value)}
+                        />
+                      )}
+                      <p className="mt-1 text-xs text-ink-soft">
+                        Casas do mesmo grupo aparecem juntas com o resultado somado, no dia e no mês.
+                      </p>
+                    </div>
                     <div className="flex gap-2">
                       <button onClick={() => setEditingId(null)} className="btn-secondary flex-1">Cancelar</button>
                       <button onClick={() => handleSave(house.id)} disabled={saving} className="btn-primary flex-1">
@@ -165,6 +212,7 @@ export function ManageBetHousesModal({ onClose, onChanged }: Props) {
                       </button>
                       <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: house.color || "#8E8E93" }} />
                       <span className="truncate">{house.name}</span>
+                      {house.groupName && <span className="pill shrink-0 bg-accent-soft text-accent">{house.groupName}</span>}
                     </span>
                     <div className="flex shrink-0 items-center gap-1">
                       <button onClick={() => startEdit(house)} className="icon-btn" aria-label={`Editar ${house.name}`}>

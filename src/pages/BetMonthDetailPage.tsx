@@ -12,6 +12,23 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
+/** Separa uma lista de casas (do dia ou do resumo do mês) entre as que têm grupo e as que não têm,
+ * pra renderizar as agrupadas juntas com o subtotal do grupo, e as sem grupo soltas como sempre. */
+function splitByGroup<T extends { groupId: string | null }>(items: T[]) {
+  const grouped = new Map<string, T[]>();
+  const ungrouped: T[] = [];
+  for (const item of items) {
+    if (item.groupId) {
+      const list = grouped.get(item.groupId) ?? [];
+      list.push(item);
+      grouped.set(item.groupId, list);
+    } else {
+      ungrouped.push(item);
+    }
+  }
+  return { grouped, ungrouped };
+}
+
 interface EditingState {
   house: BetMonthDayHouse;
   date: string;
@@ -90,27 +107,71 @@ export function BetMonthDetailPage() {
           </button>
           {geralOpen && (
             <ul className="mt-2 divide-y divide-line/70">
-              {data.houseSummaries.map((h) => {
-                const hPositivo = h.totalResult >= 0;
+              {(() => {
+                const { grouped, ungrouped } = splitByGroup(data.houseSummaries);
                 return (
-                  <li key={h.houseId} className="flex items-center justify-between gap-2 py-2">
-                    <span className="flex min-w-0 items-center gap-2">
-                      <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: h.color || "#8E8E93" }} />
-                      <span className="truncate text-[15px] font-medium text-ink">{h.name}</span>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-2">
-                      <span className={`num text-[15px] ${hPositivo ? "text-success" : "text-danger"}`}>
-                        {hPositivo ? "+" : ""}
-                        {formatUnits(h.totalResultUnits)}
-                      </span>
-                      <span className={`num text-xs ${hPositivo ? "text-success" : "text-danger"}`}>
-                        ({hPositivo ? "+" : ""}
-                        {formatCurrency(h.totalResult)})
-                      </span>
-                    </span>
-                  </li>
+                  <>
+                    {data.groupSummaries.map((g) => {
+                      const gPositivo = g.totalResult >= 0;
+                      return (
+                        <li key={g.groupId} className="py-2">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate text-[15px] font-semibold text-ink">{g.name}</span>
+                            <span className="flex shrink-0 items-center gap-2">
+                              <span className={`num text-[15px] ${gPositivo ? "text-success" : "text-danger"}`}>
+                                {gPositivo ? "+" : ""}
+                                {formatUnits(g.totalResultUnits)}
+                              </span>
+                              <span className={`num text-xs ${gPositivo ? "text-success" : "text-danger"}`}>
+                                ({gPositivo ? "+" : ""}
+                                {formatCurrency(g.totalResult)})
+                              </span>
+                            </span>
+                          </div>
+                          <ul className="mt-1 space-y-1 pl-4">
+                            {(grouped.get(g.groupId) ?? []).map((h) => {
+                              const hPositivo = h.totalResult >= 0;
+                              return (
+                                <li key={h.houseId} className="flex items-center justify-between gap-2">
+                                  <span className="flex min-w-0 items-center gap-2">
+                                    <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: h.color || "#8E8E93" }} />
+                                    <span className="truncate text-sm text-ink-soft">{h.name}</span>
+                                  </span>
+                                  <span className={`num shrink-0 text-sm ${hPositivo ? "text-success" : "text-danger"}`}>
+                                    {hPositivo ? "+" : ""}
+                                    {formatUnits(h.totalResultUnits)}
+                                  </span>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        </li>
+                      );
+                    })}
+                    {ungrouped.map((h) => {
+                      const hPositivo = h.totalResult >= 0;
+                      return (
+                        <li key={h.houseId} className="flex items-center justify-between gap-2 py-2">
+                          <span className="flex min-w-0 items-center gap-2">
+                            <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: h.color || "#8E8E93" }} />
+                            <span className="truncate text-[15px] font-medium text-ink">{h.name}</span>
+                          </span>
+                          <span className="flex shrink-0 items-center gap-2">
+                            <span className={`num text-[15px] ${hPositivo ? "text-success" : "text-danger"}`}>
+                              {hPositivo ? "+" : ""}
+                              {formatUnits(h.totalResultUnits)}
+                            </span>
+                            <span className={`num text-xs ${hPositivo ? "text-success" : "text-danger"}`}>
+                              ({hPositivo ? "+" : ""}
+                              {formatCurrency(h.totalResult)})
+                            </span>
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </>
                 );
-              })}
+              })()}
             </ul>
           )}
         </div>
@@ -140,38 +201,61 @@ export function BetMonthDetailPage() {
                   {day.houses.length === 0 ? (
                     <p className="py-2 text-center text-sm text-ink-soft">Nenhuma casa cadastrada.</p>
                   ) : (
-                    day.houses.map((h) => {
-                      const hPositivo = h.result >= 0;
-                      const opening = h.balance - h.result;
-                      return (
-                        <div key={h.houseId} className="flex items-center justify-between gap-2 py-1.5">
-                          <span className="flex min-w-0 items-center gap-2">
-                            <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: h.color || "#8E8E93" }} />
-                            <span className="min-w-0">
-                              <span className="block truncate text-sm font-medium text-ink">{h.name}</span>
-                              <span className="num block text-xs text-ink-soft">
-                                {formatCurrency(opening)} → {formatCurrency(h.balance)}
+                    (() => {
+                      const houseRow = (h: BetMonthDayHouse) => {
+                        const hPositivo = h.result >= 0;
+                        const opening = h.balance - h.result;
+                        return (
+                          <div key={h.houseId} className="flex items-center justify-between gap-2 py-1.5">
+                            <span className="flex min-w-0 items-center gap-2">
+                              <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: h.color || "#8E8E93" }} />
+                              <span className="min-w-0">
+                                <span className="block truncate text-sm font-medium text-ink">{h.name}</span>
+                                <span className="num block text-xs text-ink-soft">
+                                  {formatCurrency(opening)} → {formatCurrency(h.balance)}
+                                </span>
                               </span>
                             </span>
-                          </span>
-                          <span className="flex shrink-0 items-center gap-2">
-                            <span className={`num text-sm ${hPositivo ? "text-success" : "text-danger"}`}>
-                              {hPositivo ? "+" : ""}
-                              {formatUnits(h.resultUnits)}
+                            <span className="flex shrink-0 items-center gap-2">
+                              <span className={`num text-sm ${hPositivo ? "text-success" : "text-danger"}`}>
+                                {hPositivo ? "+" : ""}
+                                {formatUnits(h.resultUnits)}
+                              </span>
+                              {day.date <= today && (
+                                <button
+                                  onClick={() => setEditing({ house: h, date: day.date, startOfDay: opening })}
+                                  className="icon-btn h-8 w-8"
+                                  aria-label={`Editar ${h.name}`}
+                                >
+                                  <PencilIcon className="h-3.5 w-3.5" />
+                                </button>
+                              )}
                             </span>
-                            {day.date <= today && (
-                              <button
-                                onClick={() => setEditing({ house: h, date: day.date, startOfDay: opening })}
-                                className="icon-btn h-8 w-8"
-                                aria-label={`Editar ${h.name}`}
-                              >
-                                <PencilIcon className="h-3.5 w-3.5" />
-                              </button>
-                            )}
-                          </span>
-                        </div>
+                          </div>
+                        );
+                      };
+                      const { grouped, ungrouped } = splitByGroup(day.houses);
+                      return (
+                        <>
+                          {day.groups.map((g) => {
+                            const gPositivo = g.result >= 0;
+                            return (
+                              <div key={g.groupId} className="rounded-xl bg-surface py-1.5">
+                                <div className="flex items-center justify-between gap-2 px-1">
+                                  <span className="truncate text-sm font-semibold text-ink">{g.name}</span>
+                                  <span className={`num text-sm ${gPositivo ? "text-success" : "text-danger"}`}>
+                                    {gPositivo ? "+" : ""}
+                                    {formatUnits(g.resultUnits)}
+                                  </span>
+                                </div>
+                                <div className="pl-3">{(grouped.get(g.groupId) ?? []).map(houseRow)}</div>
+                              </div>
+                            );
+                          })}
+                          {ungrouped.map(houseRow)}
+                        </>
                       );
-                    })
+                    })()
                   )}
                   {day.date <= today && (
                     <button onClick={() => setTransferDate(day.date)} className="btn-secondary mt-2 w-full text-sm">
