@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { BetCompetitionRanking } from "../api/types";
 import { ArrowLeftIcon } from "../components/icons";
-import { formatCurrency, formatMonthName, formatUnits } from "../utils/format";
+import { formatMonthName, formatUnits } from "../utils/format";
 
 function monthLabel(year: number, month: number) {
   return formatMonthName(`${year}-${String(month).padStart(2, "0")}`);
@@ -64,7 +64,7 @@ export function BetCompetitionDetailPage() {
         <h2 className="mb-1 text-base font-bold text-ink">Ranking</h2>
         <ul className="divide-y divide-line/70">
           {ranking.ranking.map((entry) => {
-            const positivo = entry.profitLoss >= 0;
+            const positivo = entry.profitLossUnits >= 0;
             const medal = MEDALS[entry.position - 1];
             return (
               <li key={entry.userId} className={`list-row ${entry.isYou ? "rounded-2xl bg-accent-soft/40" : ""}`}>
@@ -80,15 +80,9 @@ export function BetCompetitionDetailPage() {
                     {!entry.hasData && <span className="block text-xs text-ink-soft">Sem mês registrado nesse período</span>}
                   </span>
                 </span>
-                <span className="flex shrink-0 flex-col items-end">
-                  <span className={`num text-[15px] ${positivo ? "text-success" : "text-danger"}`}>
-                    {positivo ? "+" : ""}
-                    {formatUnits(entry.profitLossUnits)}
-                  </span>
-                  <span className={`num text-xs ${positivo ? "text-success" : "text-danger"}`}>
-                    {positivo ? "+" : ""}
-                    {formatCurrency(entry.profitLoss)}
-                  </span>
+                <span className={`num shrink-0 text-[15px] ${positivo ? "text-success" : "text-danger"}`}>
+                  {positivo ? "+" : ""}
+                  {formatUnits(entry.profitLossUnits)}
                 </span>
               </li>
             );
