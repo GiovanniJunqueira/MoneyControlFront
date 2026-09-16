@@ -81,40 +81,38 @@ export function BetsHomePage() {
         </div>
       ) : (
         <>
-          <div className="card">
-            <ul className="divide-y divide-line/70">
-              {months.map((m) => {
-                const positivo = m.profitLoss >= 0;
-                const label = formatMonthName(m.startDate.slice(0, 7));
-                return (
-                  <li key={m.id} className="flex items-center gap-1">
-                    <button
-                      onClick={() => navigate(`/bets/months/${m.id}`)}
-                      className="list-row -mx-1 min-w-0 flex-1 rounded-2xl px-1 text-left transition-colors hover:bg-surface-soft active:bg-surface-soft"
-                    >
-                      <span className="flex min-w-0 items-center gap-2">
-                        <span className="truncate text-[15px] font-medium text-ink">{label}</span>
-                        {m.open && <span className="pill shrink-0 bg-accent-soft text-accent">Atual</span>}
+          <div className="space-y-3">
+            {months.map((m) => {
+              const positivo = m.profitLoss >= 0;
+              const label = formatMonthName(m.startDate.slice(0, 7));
+              return (
+                <div key={m.id} className="card flex items-center gap-1">
+                  <button
+                    onClick={() => navigate(`/bets/months/${m.id}`)}
+                    className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="truncate text-[15px] font-medium text-ink">{label}</span>
+                      {m.open && <span className="pill shrink-0 bg-accent-soft text-accent">Atual</span>}
+                    </span>
+                    <span className="flex shrink-0 items-center gap-1.5">
+                      <span className={`num text-[15px] ${positivo ? "text-success" : "text-danger"}`}>
+                        {positivo ? "+" : ""}
+                        {formatUnits(m.profitLossUnits)}
                       </span>
-                      <span className="flex shrink-0 items-center gap-1.5">
-                        <span className={`num text-[15px] ${positivo ? "text-success" : "text-danger"}`}>
-                          {positivo ? "+" : ""}
-                          {formatUnits(m.profitLossUnits)}
-                        </span>
-                        <ChevronRightIcon className="h-4 w-4 text-ink-soft" />
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => handleDeleteMonth(m.id, label)}
-                      className="icon-btn h-8 w-8 shrink-0 text-danger"
-                      aria-label={`Excluir ${label}`}
-                    >
-                      <TrashIcon className="h-3.5 w-3.5" />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+                      <ChevronRightIcon className="h-4 w-4 text-ink-soft" />
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteMonth(m.id, label)}
+                    className="icon-btn h-8 w-8 shrink-0 text-danger"
+                    aria-label={`Excluir ${label}`}
+                  >
+                    <TrashIcon className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
           {error && <p className="mt-2 text-sm text-danger">{error}</p>}
 

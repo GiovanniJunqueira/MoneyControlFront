@@ -21,6 +21,7 @@ export function BetMonthDetailPage() {
   const { monthId } = useParams<{ monthId: string }>();
   const [data, setData] = useState<BetMonthDays | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [geralOpen, setGeralOpen] = useState(false);
   const [showChangeUnit, setShowChangeUnit] = useState(false);
   const [editing, setEditing] = useState<EditingState | null>(null);
 
@@ -77,30 +78,39 @@ export function BetMonthDetailPage() {
 
       {data.houseSummaries.length > 0 && (
         <div className="card mb-4">
-          <p className="mb-2 text-sm font-semibold text-ink">Geral do mês, por casa</p>
-          <ul className="divide-y divide-line/70">
-            {data.houseSummaries.map((h) => {
-              const hPositivo = h.totalResult >= 0;
-              return (
-                <li key={h.houseId} className="flex items-center justify-between gap-2 py-2">
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: h.color || "#8E8E93" }} />
-                    <span className="truncate text-[15px] font-medium text-ink">{h.name}</span>
-                  </span>
-                  <span className="flex shrink-0 items-center gap-2">
-                    <span className={`num text-[15px] ${hPositivo ? "text-success" : "text-danger"}`}>
-                      {hPositivo ? "+" : ""}
-                      {formatUnits(h.totalResultUnits)}
+          <button
+            onClick={() => setGeralOpen((prev) => !prev)}
+            className="flex w-full items-center justify-between gap-3 text-left"
+            aria-expanded={geralOpen}
+          >
+            <span className="text-sm font-semibold text-ink">Geral do mês, por casa</span>
+            <ChevronRightIcon className={`h-4 w-4 shrink-0 text-ink-soft transition-transform ${geralOpen ? "rotate-90" : ""}`} />
+          </button>
+          {geralOpen && (
+            <ul className="mt-2 divide-y divide-line/70">
+              {data.houseSummaries.map((h) => {
+                const hPositivo = h.totalResult >= 0;
+                return (
+                  <li key={h.houseId} className="flex items-center justify-between gap-2 py-2">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: h.color || "#8E8E93" }} />
+                      <span className="truncate text-[15px] font-medium text-ink">{h.name}</span>
                     </span>
-                    <span className={`num text-xs ${hPositivo ? "text-success" : "text-danger"}`}>
-                      ({hPositivo ? "+" : ""}
-                      {formatCurrency(h.totalResult)})
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span className={`num text-[15px] ${hPositivo ? "text-success" : "text-danger"}`}>
+                        {hPositivo ? "+" : ""}
+                        {formatUnits(h.totalResultUnits)}
+                      </span>
+                      <span className={`num text-xs ${hPositivo ? "text-success" : "text-danger"}`}>
+                        ({hPositivo ? "+" : ""}
+                        {formatCurrency(h.totalResult)})
+                      </span>
                     </span>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       )}
 
