@@ -325,7 +325,6 @@ export function BetMonthDetailPage() {
           monthId={monthId}
           date={transferDate}
           houses={(data.days.find((d) => d.date === transferDate)?.houses ?? [])
-            .filter((h) => h.name.toLowerCase() !== "banco")
             .map((h) => ({ houseId: h.houseId, name: h.name }))}
           onClose={() => setTransferDate(null)}
           onSaved={() => { setTransferDate(null); load(); }}
