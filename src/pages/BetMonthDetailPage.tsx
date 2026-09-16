@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import { BetMonthDays, BetMonthDayHouse } from "../api/types";
 import { ChangeUnitValueModal } from "../components/ChangeUnitValueModal";
 import { UpdateBetBalanceModal } from "../components/UpdateBetBalanceModal";
+import { TransferModal } from "../components/TransferModal";
 import { ArrowLeftIcon, ChevronRightIcon, PencilIcon } from "../components/icons";
 import { formatCurrency, formatUnits, formatDate, formatMonthName } from "../utils/format";
 
@@ -24,6 +25,7 @@ export function BetMonthDetailPage() {
   const [geralOpen, setGeralOpen] = useState(false);
   const [showChangeUnit, setShowChangeUnit] = useState(false);
   const [editing, setEditing] = useState<EditingState | null>(null);
+  const [transferDate, setTransferDate] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!monthId) return;
@@ -171,6 +173,11 @@ export function BetMonthDetailPage() {
                       );
                     })
                   )}
+                  {day.date <= today && (
+                    <button onClick={() => setTransferDate(day.date)} className="btn-secondary mt-2 w-full text-sm">
+                      Saque / Depósito
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -196,6 +203,17 @@ export function BetMonthDetailPage() {
           startOfDayBalance={editing.startOfDay}
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); load(); }}
+        />
+      )}
+      {transferDate && monthId && (
+        <TransferModal
+          monthId={monthId}
+          date={transferDate}
+          houses={(data.days.find((d) => d.date === transferDate)?.houses ?? [])
+            .filter((h) => h.name.toLowerCase() !== "banco")
+            .map((h) => ({ houseId: h.houseId, name: h.name }))}
+          onClose={() => setTransferDate(null)}
+          onSaved={() => { setTransferDate(null); load(); }}
         />
       )}
     </div>
