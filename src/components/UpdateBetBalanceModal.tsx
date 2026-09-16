@@ -11,6 +11,7 @@ interface Props {
   isToday: boolean;
   currentBalance: number;
   startOfDayBalance: number;
+  currentOpeningOverride: number | null;
   onClose: () => void;
   onSaved: () => void;
 }
@@ -23,6 +24,7 @@ export function UpdateBetBalanceModal({
   isToday,
   currentBalance,
   startOfDayBalance,
+  currentOpeningOverride,
   onClose,
   onSaved,
 }: Props) {
@@ -37,14 +39,18 @@ export function UpdateBetBalanceModal({
     setSaving(true);
     try {
       const openingValue = Number(opening.replace(",", "."));
-      // Só manda o ajuste se o valor realmente mudou do que já estava calculado — assim, se a pessoa
-      // não mexer nesse campo, o saldo inicial continua automático (carry-forward do dia anterior),
-      // mesmo que um dia anterior seja editado depois.
+      // Só manda um ajuste NOVO se o valor do campo realmente mudou do que estava mostrado. Se não
+      // mudou, mantém exatamente o que já estava salvo pra esse dia — automático (null) se já era
+      // automático, ou o mesmo ajuste explícito (ex: de um saque/depósito) se já existia um. Antes
+      // mandava sempre `null` quando o campo não mudava, o que apagava um ajuste explícito já salvo
+      // (ex: editar só o saldo final de um dia que tinha saldo inicial ajustado por um saque/depósito
+      // zerava esse ajuste, porque a comparação usava só o valor mostrado, sem saber se ele vinha de
+      // um ajuste ou do carry-forward automático).
       const unchanged = Math.abs(openingValue - startOfDayBalance) < 0.005;
       await api.post(`/bets/months/${monthId}/houses/${houseId}/balance`, {
         balance: Number(balance.replace(",", ".")),
         date,
-        openingBalance: unchanged ? null : openingValue,
+        openingBalance: unchanged ? currentOpeningOverride : openingValue,
       });
       onSaved();
     } catch (err) {

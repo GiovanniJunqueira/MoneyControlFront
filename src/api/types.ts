@@ -180,6 +180,7 @@ export interface BetMonthDayHouse {
   balanceUnits: number;
   result: number;
   resultUnits: number;
+  openingOverride: number | null;
 }
 
 export interface BetMonthDay {

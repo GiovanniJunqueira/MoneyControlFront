@@ -201,6 +201,7 @@ export function BetMonthDetailPage() {
           isToday={editing.date === today}
           currentBalance={editing.house.balance}
           startOfDayBalance={editing.startOfDay}
+          currentOpeningOverride={editing.house.openingOverride}
           onClose={() => setEditing(null)}
           onSaved={() => { setEditing(null); load(); }}
         />
