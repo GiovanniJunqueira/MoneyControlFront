@@ -39,6 +39,7 @@ export function BetMonthDetailPage() {
   const { monthId } = useParams<{ monthId: string }>();
   const [data, setData] = useState<BetMonthDays | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [geralOpen, setGeralOpen] = useState(false);
   const [showChangeUnit, setShowChangeUnit] = useState(false);
   const [editing, setEditing] = useState<EditingState | null>(null);
@@ -63,6 +64,15 @@ export function BetMonthDetailPage() {
       const next = new Set(prev);
       if (next.has(date)) next.delete(date);
       else next.add(date);
+      return next;
+    });
+  }
+
+  function toggleGroup(key: string) {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }
@@ -113,10 +123,19 @@ export function BetMonthDetailPage() {
                   <>
                     {data.groupSummaries.map((g) => {
                       const gPositivo = g.totalResult >= 0;
+                      const key = `month:${g.groupId}`;
+                      const gOpen = expandedGroups.has(key);
                       return (
                         <li key={g.groupId} className="py-2">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="truncate text-[15px] font-semibold text-ink">{g.name}</span>
+                          <button
+                            onClick={() => toggleGroup(key)}
+                            className="flex w-full items-center justify-between gap-2 text-left"
+                            aria-expanded={gOpen}
+                          >
+                            <span className="flex min-w-0 items-center gap-1.5">
+                              <ChevronRightIcon className={`h-3.5 w-3.5 shrink-0 text-ink-soft transition-transform ${gOpen ? "rotate-90" : ""}`} />
+                              <span className="truncate text-[15px] font-semibold text-ink">{g.name}</span>
+                            </span>
                             <span className="flex shrink-0 items-center gap-2">
                               <span className={`num text-[15px] ${gPositivo ? "text-success" : "text-danger"}`}>
                                 {gPositivo ? "+" : ""}
@@ -127,24 +146,26 @@ export function BetMonthDetailPage() {
                                 {formatCurrency(g.totalResult)})
                               </span>
                             </span>
-                          </div>
-                          <ul className="mt-1 space-y-1 pl-4">
-                            {(grouped.get(g.groupId) ?? []).map((h) => {
-                              const hPositivo = h.totalResult >= 0;
-                              return (
-                                <li key={h.houseId} className="flex items-center justify-between gap-2">
-                                  <span className="flex min-w-0 items-center gap-2">
-                                    <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: h.color || "#8E8E93" }} />
-                                    <span className="truncate text-sm text-ink-soft">{h.name}</span>
-                                  </span>
-                                  <span className={`num shrink-0 text-sm ${hPositivo ? "text-success" : "text-danger"}`}>
-                                    {hPositivo ? "+" : ""}
-                                    {formatUnits(h.totalResultUnits)}
-                                  </span>
-                                </li>
-                              );
-                            })}
-                          </ul>
+                          </button>
+                          {gOpen && (
+                            <ul className="mt-1 space-y-1 pl-5">
+                              {(grouped.get(g.groupId) ?? []).map((h) => {
+                                const hPositivo = h.totalResult >= 0;
+                                return (
+                                  <li key={h.houseId} className="flex items-center justify-between gap-2">
+                                    <span className="flex min-w-0 items-center gap-2">
+                                      <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: h.color || "#8E8E93" }} />
+                                      <span className="truncate text-sm text-ink-soft">{h.name}</span>
+                                    </span>
+                                    <span className={`num shrink-0 text-sm ${hPositivo ? "text-success" : "text-danger"}`}>
+                                      {hPositivo ? "+" : ""}
+                                      {formatUnits(h.totalResultUnits)}
+                                    </span>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
                         </li>
                       );
                     })}
@@ -239,16 +260,25 @@ export function BetMonthDetailPage() {
                         <>
                           {day.groups.map((g) => {
                             const gPositivo = g.result >= 0;
+                            const key = `day:${day.date}:${g.groupId}`;
+                            const gOpen = expandedGroups.has(key);
                             return (
                               <div key={g.groupId} className="rounded-xl bg-surface py-1.5">
-                                <div className="flex items-center justify-between gap-2 px-1">
-                                  <span className="truncate text-sm font-semibold text-ink">{g.name}</span>
+                                <button
+                                  onClick={() => toggleGroup(key)}
+                                  className="flex w-full items-center justify-between gap-2 px-1 text-left"
+                                  aria-expanded={gOpen}
+                                >
+                                  <span className="flex min-w-0 items-center gap-1.5">
+                                    <ChevronRightIcon className={`h-3.5 w-3.5 shrink-0 text-ink-soft transition-transform ${gOpen ? "rotate-90" : ""}`} />
+                                    <span className="truncate text-sm font-semibold text-ink">{g.name}</span>
+                                  </span>
                                   <span className={`num text-sm ${gPositivo ? "text-success" : "text-danger"}`}>
                                     {gPositivo ? "+" : ""}
                                     {formatUnits(g.resultUnits)}
                                   </span>
-                                </div>
-                                <div className="pl-3">{(grouped.get(g.groupId) ?? []).map(houseRow)}</div>
+                                </button>
+                                {gOpen && <div className="pl-3">{(grouped.get(g.groupId) ?? []).map(houseRow)}</div>}
                               </div>
                             );
                           })}
