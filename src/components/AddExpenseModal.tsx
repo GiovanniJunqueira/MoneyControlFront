@@ -14,11 +14,15 @@ function todayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
+type Recurrence = "NONE" | "FIXED" | "INDEFINITE";
+
 export function AddExpenseModal({ tabId, categories, onClose, onSaved }: Props) {
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(todayIso());
+  const [recurrence, setRecurrence] = useState<Recurrence>("NONE");
+  const [recurrenceMonths, setRecurrenceMonths] = useState("12");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -26,6 +30,10 @@ export function AddExpenseModal({ tabId, categories, onClose, onSaved }: Props) 
     e.preventDefault();
     if (!categoryId) {
       setError("Crie uma categoria antes de lançar um gasto.");
+      return;
+    }
+    if (recurrence === "FIXED" && (!recurrenceMonths || Number(recurrenceMonths) < 1)) {
+      setError("Informe por quantos meses o gasto se repete.");
       return;
     }
     setError(null);
@@ -36,6 +44,8 @@ export function AddExpenseModal({ tabId, categories, onClose, onSaved }: Props) 
         amount: Number(amount.replace(",", ".")),
         description: description || undefined,
         date,
+        recurrence: recurrence === "NONE" ? undefined : recurrence,
+        recurrenceMonths: recurrence === "FIXED" ? Number(recurrenceMonths) : undefined,
       });
       onSaved();
     } catch (err) {
@@ -59,7 +69,7 @@ export function AddExpenseModal({ tabId, categories, onClose, onSaved }: Props) 
         </div>
 
         <div>
-          <label className="field-label" htmlFor="amount">Valor</label>
+          <label className="field-label" htmlFor="amount">{recurrence === "NONE" ? "Valor" : "Valor mensal"}</label>
           <input
             id="amount"
             required
@@ -77,8 +87,46 @@ export function AddExpenseModal({ tabId, categories, onClose, onSaved }: Props) 
         </div>
 
         <div>
-          <label className="field-label" htmlFor="date">Data</label>
+          <label className="field-label" htmlFor="date">{recurrence === "NONE" ? "Data" : "1ª data"}</label>
           <input id="date" type="date" required className="field" value={date} onChange={(e) => setDate(e.target.value)} />
+        </div>
+
+        <div>
+          <span className="field-label">Recorrência</span>
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              ["NONE", "Só esse"],
+              ["FIXED", "Por X meses"],
+              ["INDEFINITE", "Indefinida"],
+            ] as [Recurrence, string][]).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setRecurrence(value)}
+                className={`rounded-2xl border-2 px-2 py-2.5 text-[13px] font-medium transition-colors ${
+                  recurrence === value ? "border-accent bg-accent-soft text-accent" : "border-line text-ink-soft"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {recurrence === "FIXED" && (
+            <input
+              className="field num mt-2"
+              inputMode="numeric"
+              placeholder="Quantos meses"
+              value={recurrenceMonths}
+              onChange={(e) => setRecurrenceMonths(e.target.value)}
+            />
+          )}
+          {recurrence !== "NONE" && (
+            <p className="mt-1 text-xs text-ink-soft">
+              {recurrence === "FIXED"
+                ? "Lança esse gasto todo mês, a partir da data acima, pelo número de meses informado."
+                : "Lança esse gasto todo mês, a partir da data acima, por um bom tempo à frente (sem precisar escolher quando acaba)."}
+            </p>
+          )}
         </div>
 
         {error && <p className="text-sm text-danger">{error}</p>}

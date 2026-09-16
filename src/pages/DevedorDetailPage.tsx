@@ -3,9 +3,11 @@ import { Link, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { Debt, DebtorDetail, DebtStatus } from "../api/types";
 import { AddDebtModal } from "../components/AddDebtModal";
+import { EditDebtModal } from "../components/EditDebtModal";
+import { ConfirmDeleteRecurringModal } from "../components/ConfirmDeleteRecurringModal";
 import { RegisterPaymentModal } from "../components/RegisterPaymentModal";
 import { PeriodNavigator } from "../components/PeriodNavigator";
-import { ArrowLeftIcon, CheckIcon, PlusIcon, TrashIcon } from "../components/icons";
+import { ArrowLeftIcon, CheckIcon, PencilIcon, PlusIcon, TrashIcon } from "../components/icons";
 import { formatCurrency, formatDate } from "../utils/format";
 
 const STATUS_LABEL: Record<DebtStatus, string> = {
@@ -27,6 +29,9 @@ export function DevedorDetailPage() {
   const [loading, setLoading] = useState(true);
   const [showAddDebt, setShowAddDebt] = useState(false);
   const [payingDebt, setPayingDebt] = useState<Debt | null>(null);
+  const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
+  const [deletingDebt, setDeletingDebt] = useState<Debt | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [selecting, setSelecting] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [settling, setSettling] = useState(false);
@@ -45,9 +50,24 @@ export function DevedorDetailPage() {
     load();
   }, [load]);
 
-  async function handleDeleteDebt(debtId: string) {
-    await api.delete(`/tabs/${tabId}/debts/${debtId}`);
-    load();
+  function handleDeleteDebt(debt: Debt) {
+    if (debt.installmentGroupId) {
+      setDeletingDebt(debt);
+    } else {
+      api.delete(`/tabs/${tabId}/debts/${debt.id}`).then(load);
+    }
+  }
+
+  async function confirmDeleteDebt(applyToFuture: boolean) {
+    if (!deletingDebt) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/tabs/${tabId}/debts/${deletingDebt.id}`, { params: { applyToFuture } });
+      setDeletingDebt(null);
+      load();
+    } finally {
+      setDeleting(false);
+    }
   }
 
   function toggleSelect(debtId: string) {
@@ -166,6 +186,9 @@ export function DevedorDetailPage() {
                     <div className="mt-1.5 flex items-center gap-2">
                       <span className="text-xs text-ink-soft">{formatDate(d.date)}</span>
                       <span className={`pill ${STATUS_CLASS[d.status]}`}>{STATUS_LABEL[d.status]}</span>
+                      {d.installmentTotal && (
+                        <span className="pill bg-accent-soft text-accent">Parcela {d.installmentNumber}/{d.installmentTotal}</span>
+                      )}
                     </div>
                   </button>
                   <div className="flex shrink-0 flex-col items-end gap-1.5">
@@ -177,7 +200,16 @@ export function DevedorDetailPage() {
                     )}
                     {!selecting && (
                       <button
-                        onClick={() => handleDeleteDebt(d.id)}
+                        onClick={() => setEditingDebt(d)}
+                        className="text-ink-soft opacity-60 transition-opacity hover:text-ink active:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                        aria-label="Editar dívida"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </button>
+                    )}
+                    {!selecting && (
+                      <button
+                        onClick={() => handleDeleteDebt(d)}
                         className="text-ink-soft opacity-60 transition-opacity hover:text-danger active:opacity-100 md:opacity-0 md:group-hover:opacity-100"
                         aria-label="Excluir dívida"
                       >
@@ -230,6 +262,19 @@ export function DevedorDetailPage() {
       )}
       {payingDebt && (
         <RegisterPaymentModal tabId={tabId} debt={payingDebt} onClose={() => setPayingDebt(null)} onSaved={() => { setPayingDebt(null); load(); }} />
+      )}
+      {editingDebt && (
+        <EditDebtModal tabId={tabId} debt={editingDebt} onClose={() => setEditingDebt(null)} onSaved={() => { setEditingDebt(null); load(); }} />
+      )}
+      {deletingDebt && (
+        <ConfirmDeleteRecurringModal
+          title="Excluir dívida"
+          itemLabel="essa parcela"
+          deleting={deleting}
+          onClose={() => setDeletingDebt(null)}
+          onDeleteOne={() => confirmDeleteDebt(false)}
+          onDeleteFuture={() => confirmDeleteDebt(true)}
+        />
       )}
     </div>
   );

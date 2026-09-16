@@ -30,6 +30,7 @@ export interface Expense {
   description: string | null;
   date: string;
   category: Category;
+  recurringGroupId: string | null;
 }
 
 export interface ExpenseListResponse {
@@ -74,6 +75,9 @@ export interface Debt {
   date: string;
   status: DebtStatus;
   paidAmount: number;
+  installmentGroupId: string | null;
+  installmentNumber: number | null;
+  installmentTotal: number | null;
 }
 
 export interface DebtorDetail {

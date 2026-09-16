@@ -1,13 +1,15 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../api/client";
-import { Category, GastosDashboard } from "../api/types";
+import { Category, Expense, GastosDashboard } from "../api/types";
 import { PeriodNavigator } from "../components/PeriodNavigator";
 import { CategoryBar } from "../components/CategoryBar";
 import { AddExpenseModal } from "../components/AddExpenseModal";
+import { EditExpenseModal } from "../components/EditExpenseModal";
+import { ConfirmDeleteRecurringModal } from "../components/ConfirmDeleteRecurringModal";
 import { ManageCategoriesModal } from "../components/ManageCategoriesModal";
 import { PeriodSettingsModal } from "../components/PeriodSettingsModal";
-import { PlusIcon, TrashIcon } from "../components/icons";
+import { PencilIcon, PlusIcon, TrashIcon } from "../components/icons";
 import { formatCurrency, formatDate } from "../utils/format";
 
 export function GastosPage() {
@@ -18,6 +20,9 @@ export function GastosPage() {
   const [loading, setLoading] = useState(true);
 
   const [showAddExpense, setShowAddExpense] = useState(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
@@ -36,9 +41,24 @@ export function GastosPage() {
     load();
   }, [load]);
 
-  async function handleDeleteExpense(id: string) {
-    await api.delete(`/tabs/${tabId}/expenses/${id}`);
-    load();
+  function handleDeleteExpense(expense: Expense) {
+    if (expense.recurringGroupId) {
+      setDeletingExpense(expense);
+    } else {
+      api.delete(`/tabs/${tabId}/expenses/${expense.id}`).then(load);
+    }
+  }
+
+  async function confirmDelete(applyToFuture: boolean) {
+    if (!deletingExpense) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/tabs/${tabId}/expenses/${deletingExpense.id}`, { params: { applyToFuture } });
+      setDeletingExpense(null);
+      load();
+    } finally {
+      setDeleting(false);
+    }
   }
 
   if (loading && !dashboard) {
@@ -103,14 +123,24 @@ export function GastosPage() {
                     style={{ backgroundColor: e.category.color || "#8E8E93" }}
                   />
                   <div className="min-w-0">
-                    <p className="truncate text-[15px] font-medium text-ink">{e.description || e.category.name}</p>
+                    <p className="truncate text-[15px] font-medium text-ink">
+                      {e.description || e.category.name}
+                      {e.recurringGroupId && <span className="pill ml-1.5 bg-accent-soft text-accent">Recorrente</span>}
+                    </p>
                     <p className="text-xs text-ink-soft">{formatDate(e.date)} · {e.category.name}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="num text-[15px] text-ink">{formatCurrency(e.amount)}</span>
                   <button
-                    onClick={() => handleDeleteExpense(e.id)}
+                    onClick={() => setEditingExpense(e)}
+                    className="text-ink-soft opacity-60 transition-opacity hover:text-ink active:opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                    aria-label="Editar gasto"
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteExpense(e)}
                     className="text-ink-soft opacity-60 transition-opacity hover:text-danger active:opacity-100 md:opacity-0 md:group-hover:opacity-100"
                     aria-label="Excluir gasto"
                   >
@@ -139,6 +169,25 @@ export function GastosPage() {
 
       {showAddExpense && (
         <AddExpenseModal tabId={tabId} categories={categories} onClose={() => setShowAddExpense(false)} onSaved={() => { setShowAddExpense(false); load(); }} />
+      )}
+      {editingExpense && (
+        <EditExpenseModal
+          tabId={tabId}
+          expense={editingExpense}
+          categories={categories}
+          onClose={() => setEditingExpense(null)}
+          onSaved={() => { setEditingExpense(null); load(); }}
+        />
+      )}
+      {deletingExpense && (
+        <ConfirmDeleteRecurringModal
+          title="Excluir gasto"
+          itemLabel="esse gasto"
+          deleting={deleting}
+          onClose={() => setDeletingExpense(null)}
+          onDeleteOne={() => confirmDelete(false)}
+          onDeleteFuture={() => confirmDelete(true)}
+        />
       )}
       {showCategories && (
         <ManageCategoriesModal tabId={tabId} categories={categories} onClose={() => setShowCategories(false)} onChanged={load} />

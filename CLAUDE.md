@@ -61,6 +61,15 @@ Padrão de página: cada página de dados busca tudo via `useCallback` + `useEff
 
 SVG puro (sem lib de gráfico), em `src/components/DonutTabChart.tsx`. Cada aba vira uma fatia cujo ângulo é proporcional a `totalGastoPeriodo` (vindo de `GET /dashboard/visao-geral`), com um piso mínimo de 8° pra aba com R$0 continuar visível/clicável — sem isso ela sumiria do gráfico. É uma rosca (donut), não uma pizza cheia, de propósito: sobra espaço no centro (a "rosquinha") pra um botão HTML absolutamente posicionado por cima do SVG ("Visão Geral" + total), sem competir com o hit-test das fatias.
 
+## Gastos recorrentes e dívidas parceladas
+
+Cada ocorrência/parcela é uma linha **real** e independente (o backend materializa tudo na criação, ver `financeiro-api/CLAUDE.md`) — o frontend não faz nenhuma projeção, só reflete o que veio da API, igual sempre fez.
+
+- **Criar**: `AddExpenseModal.tsx` ganhou um seletor "Recorrência" (`Só esse` / `Por X meses` / `Indefinida`, três botões tipo os toggles Saque/Depósito do Bets) — quando não é "Só esse", manda `recurrence`/`recurrenceMonths` no POST e o label do campo de valor vira "Valor mensal". `AddDebtModal.tsx` ganhou um checkbox "Parcelar" que revela "Quantas vezes" com uma prévia ao vivo (`R$ X,XX/mês`, calculada no frontend só pra exibição — o backend é quem faz a divisão de verdade) e troca o label do valor pra "Valor total".
+- **Editar**: `EditExpenseModal.tsx`/`EditDebtModal.tsx` (novos, ao lado dos Add que só criavam — **antes dessa feature não existia edição de gasto/dívida no frontend, só criar e excluir**) têm os mesmos campos dos Add, mais um checkbox "Aplicar às [próximas ocorrências/parcelas futuras] também" que só aparece quando `expense.recurringGroupId`/`debt.installmentGroupId` não é `null`. Quando marcado, o campo de data fica desabilitado (mudar a data de "todas as futuras de uma vez" não faz sentido — cada uma mantém a sua) e manda `applyToFuture: true` no PUT.
+- **Excluir**: `GastosPage.tsx`/`DevedorDetailPage.tsx` só abrem o `ConfirmDeleteRecurringModal.tsx` (componente novo, compartilhado pelas duas telas) quando o item tem `recurringGroupId`/`installmentGroupId` — perguntando "excluir só esse/essa" vs. "esse/essa e os/as futuros/as" (manda `applyToFuture` como query param no DELETE). Sem grupo, continua excluindo direto sem perguntar, como sempre foi.
+- **Badges**: gasto recorrente mostra uma `.pill` "Recorrente" ao lado da descrição em `GastosPage.tsx`; parcela de dívida mostra "Parcela X/Y" ao lado do status em `DevedorDetailPage.tsx` (usa `installmentNumber`/`installmentTotal` vindos da API).
+
 ## Módulo Bets — área separada, fora do layout do Financeiro
 
 Ativado por `user.betsEnabled` (toggle no `SettingsModal.tsx`, ao lado do dark/light). Não tem nada a ver com abas — é uma segunda "aplicação" dentro do mesmo app React, com seu próprio layout (`BetsLayout.tsx`: topbar "Bets" + botão pra voltar ao Financeiro + Configurações + Sair, sem `Sidebar`/`AppLayout`).
