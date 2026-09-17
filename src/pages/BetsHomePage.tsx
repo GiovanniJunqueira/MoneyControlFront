@@ -70,6 +70,9 @@ export function BetsHomePage() {
           {lucroPositivo ? "+" : ""}
           {formatCurrency(overview?.totalProfitLoss ?? 0)}
         </p>
+        <p className="num mt-3 text-sm text-ink-soft">
+          banca: {formatCurrency(overview?.totalBanca ?? 0)} · {formatUnits(overview?.totalBancaUnits ?? 0)}
+        </p>
       </div>
 
       {months.length === 0 ? (

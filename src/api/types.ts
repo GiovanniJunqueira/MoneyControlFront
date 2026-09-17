@@ -170,6 +170,8 @@ export interface BetHouseGroup {
 export interface BetOverview {
   totalProfitLoss: number;
   totalProfitLossUnits: number;
+  totalBanca: number;
+  totalBancaUnits: number;
 }
 
 export interface BetMonthSummary {
