@@ -17,6 +17,16 @@ export function BetsHomePage() {
   const [showManageHouses, setShowManageHouses] = useState(false);
   const [showStartMonth, setShowStartMonth] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedYears, setExpandedYears] = useState<Set<string>>(new Set());
+
+  function toggleYear(year: string) {
+    setExpandedYears((prev) => {
+      const next = new Set(prev);
+      if (next.has(year)) next.delete(year);
+      else next.add(year);
+      return next;
+    });
+  }
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -106,54 +116,65 @@ export function BetsHomePage() {
         </div>
       ) : (
         <>
-          {yearGroups.map((yg) => {
-            const yearPositivo = yg.yearProfit >= 0;
-            return (
-              <div key={yg.year} className="mb-5">
-                <div className="mb-2 flex items-baseline justify-between px-1">
-                  <h2 className="text-lg font-bold text-ink">{yg.year}</h2>
-                  <span className={`num text-sm ${yearPositivo ? "text-success" : "text-danger"}`}>
-                    {yearPositivo ? "+" : ""}
-                    {formatUnits(yg.yearProfitUnits)} · {yearPositivo ? "+" : ""}
-                    {formatCurrency(yg.yearProfit)}
-                  </span>
+          <div className="space-y-3">
+            {yearGroups.map((yg) => {
+              const yearPositivo = yg.yearProfit >= 0;
+              const isOpen = expandedYears.has(yg.year);
+              return (
+                <div key={yg.year} className="card">
+                  <button
+                    onClick={() => toggleYear(yg.year)}
+                    className="flex w-full items-center justify-between gap-3 text-left"
+                    aria-expanded={isOpen}
+                  >
+                    <span className="text-[15px] font-medium text-ink">{yg.year}</span>
+                    <span className="flex items-center gap-1.5">
+                      <span className={`num text-[15px] ${yearPositivo ? "text-success" : "text-danger"}`}>
+                        {yearPositivo ? "+" : ""}
+                        {formatUnits(yg.yearProfitUnits)}
+                      </span>
+                      <ChevronRightIcon className={`h-4 w-4 shrink-0 text-ink-soft transition-transform ${isOpen ? "rotate-90" : ""}`} />
+                    </span>
+                  </button>
+                  {isOpen && (
+                    <div className="-mx-1 mt-3 space-y-3 rounded-2xl bg-surface-soft p-3">
+                      {yg.months.map((m) => {
+                        const positivo = m.profitLoss >= 0;
+                        const label = formatMonthName(m.startDate.slice(0, 7));
+                        return (
+                          <div key={m.id} className="card flex items-center gap-1">
+                            <button
+                              onClick={() => navigate(`/bets/months/${m.id}`)}
+                              className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
+                            >
+                              <span className="flex min-w-0 items-center gap-2">
+                                <span className="truncate text-[15px] font-medium text-ink">{label}</span>
+                                {m.open && <span className="pill shrink-0 bg-accent-soft text-accent">Atual</span>}
+                              </span>
+                              <span className="flex shrink-0 items-center gap-1.5">
+                                <span className={`num text-[15px] ${positivo ? "text-success" : "text-danger"}`}>
+                                  {positivo ? "+" : ""}
+                                  {formatUnits(m.profitLossUnits)}
+                                </span>
+                                <ChevronRightIcon className="h-4 w-4 text-ink-soft" />
+                              </span>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteMonth(m.id, label)}
+                              className="icon-btn h-8 w-8 shrink-0 text-danger"
+                              aria-label={`Excluir ${label}`}
+                            >
+                              <TrashIcon className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-                <div className="space-y-3">
-                  {yg.months.map((m) => {
-                    const positivo = m.profitLoss >= 0;
-                    const label = formatMonthName(m.startDate.slice(0, 7));
-                    return (
-                      <div key={m.id} className="card flex items-center gap-1">
-                        <button
-                          onClick={() => navigate(`/bets/months/${m.id}`)}
-                          className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
-                        >
-                          <span className="flex min-w-0 items-center gap-2">
-                            <span className="truncate text-[15px] font-medium text-ink">{label}</span>
-                            {m.open && <span className="pill shrink-0 bg-accent-soft text-accent">Atual</span>}
-                          </span>
-                          <span className="flex shrink-0 items-center gap-1.5">
-                            <span className={`num text-[15px] ${positivo ? "text-success" : "text-danger"}`}>
-                              {positivo ? "+" : ""}
-                              {formatUnits(m.profitLossUnits)}
-                            </span>
-                            <ChevronRightIcon className="h-4 w-4 text-ink-soft" />
-                          </span>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteMonth(m.id, label)}
-                          className="icon-btn h-8 w-8 shrink-0 text-danger"
-                          aria-label={`Excluir ${label}`}
-                        >
-                          <TrashIcon className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
           {error && <p className="mt-2 text-sm text-danger">{error}</p>}
 
           <button onClick={() => setShowStartMonth(true)} className="btn-secondary mt-4 w-full">
