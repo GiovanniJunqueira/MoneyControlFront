@@ -35,6 +35,12 @@ interface EditingState {
   startOfDay: number;
 }
 
+interface LastUpdate {
+  houseId: string;
+  date: string;
+  at: number;
+}
+
 export function BetMonthDetailPage() {
   const { monthId } = useParams<{ monthId: string }>();
   const [data, setData] = useState<BetMonthDays | null>(null);
@@ -44,6 +50,7 @@ export function BetMonthDetailPage() {
   const [showChangeUnit, setShowChangeUnit] = useState(false);
   const [editing, setEditing] = useState<EditingState | null>(null);
   const [transferDate, setTransferDate] = useState<string | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<LastUpdate | null>(null);
 
   const load = useCallback(async () => {
     if (!monthId) return;
@@ -235,8 +242,12 @@ export function BetMonthDetailPage() {
                       const houseRow = (h: BetMonthDayHouse) => {
                         const hPositivo = h.result >= 0;
                         const opening = h.balance - h.result;
+                        const isLastUpdated = lastUpdate?.houseId === h.houseId && lastUpdate?.date === day.date;
                         return (
-                          <div key={h.houseId} className="flex items-center justify-between gap-2 py-1.5">
+                          <div
+                            key={isLastUpdated ? `${h.houseId}-${lastUpdate!.at}` : h.houseId}
+                            className={`-mx-2 flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 ${isLastUpdated ? "flash-highlight" : ""}`}
+                          >
                             <span className="flex min-w-0 items-center gap-2">
                               <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: h.color || "#8E8E93" }} />
                               <span className="min-w-0">
@@ -326,7 +337,11 @@ export function BetMonthDetailPage() {
           startOfDayBalance={editing.startOfDay}
           currentOpeningOverride={editing.house.openingOverride}
           onClose={() => setEditing(null)}
-          onSaved={() => { setEditing(null); load(); }}
+          onSaved={() => {
+            setLastUpdate({ houseId: editing.house.houseId, date: editing.date, at: Date.now() });
+            setEditing(null);
+            load();
+          }}
         />
       )}
       {transferDate && monthId && (

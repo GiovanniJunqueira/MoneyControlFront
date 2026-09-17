@@ -172,6 +172,7 @@ export interface BetOverview {
   totalProfitLossUnits: number;
   totalBanca: number;
   totalBancaUnits: number;
+  currentUnitValue: number;
 }
 
 export interface BetMonthSummary {

@@ -97,4 +97,19 @@
   .pill {
     @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold;
   }
+
+  /* Pisca suave no fundo pra destacar a última casa que a pessoa acabou de atualizar - some
+     sozinho, sem precisar de nenhum estado permanente. */
+  .flash-highlight {
+    animation: flash-highlight 1.6s ease-out;
+  }
+
+  @keyframes flash-highlight {
+    0% {
+      background-color: rgb(var(--color-accent-soft));
+    }
+    100% {
+      background-color: transparent;
+    }
+  }
 }
