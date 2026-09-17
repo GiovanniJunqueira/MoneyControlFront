@@ -2,7 +2,7 @@ import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { extractErrorMessage } from "../api/client";
-import { WalletIcon } from "../components/icons";
+import { WalletIcon, EyeIcon, EyeOffIcon } from "../components/icons";
 
 export function RegisterPage() {
   const { register } = useAuth();
@@ -10,6 +10,7 @@ export function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -50,7 +51,25 @@ export function RegisterPage() {
             </div>
             <div>
               <label className="field-label" htmlFor="password">Senha</label>
-              <input id="password" type="password" required minLength={6} className="field" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={6}
+                  className="field pr-11"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="icon-btn absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2"
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                >
+                  {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                </button>
+              </div>
               <p className="mt-1 text-xs text-ink-soft">Mínimo de 6 caracteres.</p>
             </div>
 

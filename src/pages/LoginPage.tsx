@@ -2,13 +2,14 @@ import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { extractErrorMessage } from "../api/client";
-import { WalletIcon } from "../components/icons";
+import { WalletIcon, EyeIcon, EyeOffIcon } from "../components/icons";
 
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -44,8 +45,30 @@ export function LoginPage() {
               <input id="email" type="email" required className="field" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
             <div>
-              <label className="field-label" htmlFor="password">Senha</label>
-              <input id="password" type="password" required className="field" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <div className="flex items-baseline justify-between">
+                <label className="field-label" htmlFor="password">Senha</label>
+                <Link to="/forgot-password" className="mb-1.5 text-[13px] font-medium text-accent">
+                  Esqueceu a senha?
+                </Link>
+              </div>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  className="field pr-11"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="icon-btn absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2"
+                  aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                >
+                  {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
             {error && <p className="text-sm text-danger">{error}</p>}
