@@ -122,9 +122,15 @@ export function BetMonthDetailPage() {
             <ul className="mt-2 divide-y divide-line/70">
               {(() => {
                 const { grouped, ungrouped } = splitByGroup(data.houseSummaries);
+                // "Geral do mês, por casa" (só aqui, não no dia): casa mais lucrativa primeiro.
+                ungrouped.sort((a, b) => b.totalResult - a.totalResult);
+                for (const members of grouped.values()) {
+                  members.sort((a, b) => b.totalResult - a.totalResult);
+                }
+                const groupSummariesSorted = [...data.groupSummaries].sort((a, b) => b.totalResult - a.totalResult);
                 return (
                   <>
-                    {data.groupSummaries.map((g) => {
+                    {groupSummariesSorted.map((g) => {
                       const gPositivo = g.totalResult >= 0;
                       const key = `month:${g.groupId}`;
                       const gOpen = expandedGroups.has(key);
