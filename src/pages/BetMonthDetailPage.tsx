@@ -86,9 +86,8 @@ export function BetMonthDetailPage() {
 
   const positivo = data.profitLoss >= 0;
   const today = todayIso();
-  // data.days vem do backend mais recente primeiro (o índice 0 é usado pra "unidade atual");
-  // aqui só invertemos a ORDEM DE EXIBIÇÃO (dia 1 no topo), sem mexer no array original.
-  const daysAscending = [...data.days].reverse();
+  // data.days vem do backend mais recente primeiro - é também a ordem de exibição (pedido do
+  // usuário: dia mais recente no topo), então usa o array direto, sem inverter.
   const currentUnitValue = data.days[0]?.unitValue ?? 0;
 
   return (
@@ -215,7 +214,7 @@ export function BetMonthDetailPage() {
       )}
 
       <div className="space-y-3">
-        {daysAscending.map((day) => {
+        {data.days.map((day) => {
           const isOpen = expanded.has(day.date);
           const dayPositivo = day.result >= 0;
           return (
