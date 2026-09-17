@@ -91,6 +91,9 @@ Ativado por `user.betsEnabled` (toggle no `SettingsModal.tsx`, ao lado do dark/l
 
 Token JWT salvo em `localStorage` (`financeiro_token`). Interceptor do axios em `api/client.ts` injeta o header e redireciona pra `/login` em qualquer 401. `AuthContext` chama `GET /auth/me` no boot pra restaurar sessão.
 
+- **Mostrar/ocultar senha**: todo campo de senha (`LoginPage`, `RegisterPage`, `ResetPasswordPage`) usa o mesmo padrão — `<input>` dentro de um `<div className="relative">`, com `pr-11` no input pra abrir espaço, e um `button type="button"` (`icon-btn absolute right-1.5 top-1/2 h-8 w-8 -translate-y-1/2`) que alterna `type` entre `"password"`/`"text"` via um `showPassword` local. Ícones novos em `icons.tsx`: `EyeIcon`/`EyeOffIcon`.
+- **Esqueci minha senha** (`ForgotPasswordPage.tsx`/`ResetPasswordPage.tsx`, rotas públicas fora do `ProtectedRoute`, ao lado de `/login`/`/register`): `ForgotPasswordPage` só pede o e-mail e chama `POST /auth/forgot-password` **diretamente via `api`** (sem passar por `AuthContext` — não gera sessão, não precisa de token) — sempre mostra a mesma mensagem de sucesso, nunca revela se o e-mail existe. `ResetPasswordPage` lê o token da URL (`useSearchParams().get("token")`) — o link vem de fora do app, de um e-mail de verdade — e chama `POST /auth/reset-password`; sem token na URL mostra direto uma mensagem de link inválido, sem tentar chamar a API.
+
 ## O que ainda falta (próximos passos conhecidos)
 
 - [x] Deploy no Vercel — feito, https://money-control-front-five.vercel.app
