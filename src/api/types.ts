@@ -260,6 +260,12 @@ export interface BetCompetition {
   isCreator: boolean;
 }
 
+export interface BetCompetitionDayResult {
+  date: string;
+  result: number;
+  resultUnits: number;
+}
+
 export interface BetCompetitionRankingEntry {
   position: number;
   userId: string;
@@ -268,6 +274,7 @@ export interface BetCompetitionRankingEntry {
   hasData: boolean;
   profitLoss: number;
   profitLossUnits: number;
+  recentDays: BetCompetitionDayResult[];
 }
 
 export interface BetCompetitionRanking {
