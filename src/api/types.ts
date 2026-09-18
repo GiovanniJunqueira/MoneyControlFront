@@ -160,6 +160,7 @@ export interface BetHouse {
   position: number;
   groupId: string | null;
   groupName: string | null;
+  archivedFrom: string | null;
 }
 
 export interface BetHouseGroup {

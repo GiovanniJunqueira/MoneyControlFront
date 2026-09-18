@@ -3,6 +3,7 @@ import { Modal } from "./Modal";
 import { api, extractErrorMessage } from "../api/client";
 import { BetHouse, BetHouseGroup } from "../api/types";
 import { SUGGESTED_COLORS } from "../utils/colors";
+import { formatDateLong } from "../utils/format";
 import { GripIcon, PencilIcon, XIcon } from "./icons";
 
 interface Props {
@@ -28,8 +29,15 @@ export function ManageBetHousesModal({ onClose, onChanged }: Props) {
   const rowRefs = useRef<Map<string, HTMLLIElement>>(new Map());
   const dragId = useRef<string | null>(null);
 
-  useEffect(() => {
+  const activeHouses = houses?.filter((h) => !h.archivedFrom) ?? null;
+  const archivedHouses = houses?.filter((h) => h.archivedFrom) ?? [];
+
+  function reload() {
     api.get<BetHouse[]>("/bets/houses").then((res) => setHouses(res.data));
+  }
+
+  useEffect(() => {
+    reload();
     api.get<BetHouseGroup[]>("/bets/groups").then((res) => setGroups(res.data));
   }, []);
 
@@ -69,14 +77,25 @@ export function ManageBetHousesModal({ onClose, onChanged }: Props) {
     }
   }
 
-  async function handleDelete(id: string) {
+  async function handleArchive(id: string) {
     setError(null);
     try {
       await api.delete(`/bets/houses/${id}`);
-      setHouses((prev) => prev?.filter((h) => h.id !== id) ?? null);
+      reload();
       onChanged();
     } catch (err) {
       setError(extractErrorMessage(err, "Não foi possível excluir essa casa."));
+    }
+  }
+
+  async function handleRestore(id: string) {
+    setError(null);
+    try {
+      await api.put(`/bets/houses/${id}/restore`);
+      reload();
+      onChanged();
+    } catch (err) {
+      setError(extractErrorMessage(err, "Não foi possível restaurar essa casa."));
     }
   }
 
@@ -88,26 +107,27 @@ export function ManageBetHousesModal({ onClose, onChanged }: Props) {
   }
 
   function handlePointerMove(e: PointerEvent<HTMLButtonElement>) {
-    if (!dragId.current || !houses) return;
-    const draggedIndex = houses.findIndex((h) => h.id === dragId.current);
+    if (!dragId.current || !activeHouses) return;
+    const draggedIndex = activeHouses.findIndex((h) => h.id === dragId.current);
     if (draggedIndex === -1) return;
     const currentY = e.clientY;
 
-    for (let i = 0; i < houses.length; i++) {
+    for (let i = 0; i < activeHouses.length; i++) {
       if (i === draggedIndex) continue;
-      const el = rowRefs.current.get(houses[i].id);
+      const el = rowRefs.current.get(activeHouses[i].id);
       if (!el) continue;
       const rect = el.getBoundingClientRect();
       const midpoint = rect.top + rect.height / 2;
       const shouldMoveUp = i < draggedIndex && currentY < midpoint;
       const shouldMoveDown = i > draggedIndex && currentY > midpoint;
       if (shouldMoveUp || shouldMoveDown) {
+        const reordered = [...activeHouses];
+        const [moved] = reordered.splice(draggedIndex, 1);
+        reordered.splice(i, 0, moved);
         setHouses((prev) => {
           if (!prev) return prev;
-          const next = [...prev];
-          const [moved] = next.splice(draggedIndex, 1);
-          next.splice(i, 0, moved);
-          return next;
+          const archived = prev.filter((h) => h.archivedFrom);
+          return [...reordered, ...archived];
         });
         break;
       }
@@ -115,11 +135,11 @@ export function ManageBetHousesModal({ onClose, onChanged }: Props) {
   }
 
   async function handlePointerUp() {
-    if (!dragId.current || !houses) return;
+    if (!dragId.current || !activeHouses) return;
     dragId.current = null;
     setDraggingId(null);
     try {
-      await api.put("/bets/houses/reorder", { houseIds: houses.map((h) => h.id) });
+      await api.put("/bets/houses/reorder", { houseIds: activeHouses.map((h) => h.id) });
       onChanged();
     } catch (err) {
       setError(extractErrorMessage(err, "Não foi possível salvar a nova ordem."));
@@ -136,7 +156,7 @@ export function ManageBetHousesModal({ onClose, onChanged }: Props) {
         <>
           <p className="mb-2 text-xs text-ink-soft">Segure e arraste pra reordenar.</p>
           <ul className="max-h-[60vh] divide-y divide-line/70 overflow-y-auto">
-            {houses.map((house) => (
+            {activeHouses?.map((house) => (
               <li
                 key={house.id}
                 ref={(el) => {
@@ -219,7 +239,7 @@ export function ManageBetHousesModal({ onClose, onChanged }: Props) {
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => handleDelete(house.id)}
+                        onClick={() => handleArchive(house.id)}
                         className="icon-btn text-danger"
                         aria-label={`Excluir ${house.name}`}
                       >
@@ -231,6 +251,30 @@ export function ManageBetHousesModal({ onClose, onChanged }: Props) {
               </li>
             ))}
           </ul>
+
+          {archivedHouses.length > 0 && (
+            <div className="mt-5">
+              <p className="mb-2 text-xs text-ink-soft">
+                Arquivadas — somem da lista atual, mas o histórico continua intacto.
+              </p>
+              <ul className="max-h-[30vh] divide-y divide-line/70 overflow-y-auto opacity-60">
+                {archivedHouses.map((house) => (
+                  <li key={house.id} className="flex items-center justify-between gap-2 py-3">
+                    <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-ink">
+                      <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: house.color || "#8E8E93" }} />
+                      <span className="min-w-0">
+                        <span className="block truncate">{house.name}</span>
+                        <span className="block text-xs text-ink-soft">desde {formatDateLong(house.archivedFrom!)}</span>
+                      </span>
+                    </span>
+                    <button onClick={() => handleRestore(house.id)} className="btn-secondary shrink-0 px-3 py-1.5 text-xs">
+                      Restaurar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </>
       )}
       {error && <p className="mt-3 text-sm text-danger">{error}</p>}
