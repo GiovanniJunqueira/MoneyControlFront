@@ -285,35 +285,3 @@ export interface BetCompetitionRanking {
   month: number;
   ranking: BetCompetitionRankingEntry[];
 }
-
-export interface FriendCode {
-  code: string;
-}
-
-export interface Friend {
-  userId: string;
-  name: string;
-}
-
-export interface FriendRequest {
-  id: string;
-  fromUserId: string;
-  fromUserName: string;
-  createdAt: string;
-}
-
-export interface SendFriendRequestResult {
-  friended: boolean;
-  otherUserName: string;
-}
-
-export interface BetFriendMonthDetail {
-  monthId: string;
-  startDate: string;
-  endDate: string | null;
-  open: boolean;
-  profitLoss: number;
-  profitLossUnits: number;
-  houseSummaries: BetHouseMonthSummary[];
-  groupSummaries: BetHouseGroupMonthSummary[];
-}
