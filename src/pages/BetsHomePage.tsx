@@ -183,9 +183,14 @@ export function BetsHomePage() {
         </>
       )}
 
-      <button onClick={() => navigate("/bets/competitions")} className="btn-secondary mt-4 w-full gap-1.5">
-        <UsersIcon className="h-4 w-4" /> Competições
-      </button>
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <button onClick={() => navigate("/bets/competitions")} className="btn-secondary flex-1 gap-1.5">
+          <UsersIcon className="h-4 w-4" /> Competições
+        </button>
+        <button onClick={() => navigate("/bets/friends")} className="btn-secondary flex-1 gap-1.5">
+          <UsersIcon className="h-4 w-4" /> Amigos
+        </button>
+      </div>
 
       <div className="mt-2 flex flex-col gap-2 sm:flex-row">
         <button onClick={() => setShowManageHouses(true)} className="btn-secondary flex-1 gap-1.5">

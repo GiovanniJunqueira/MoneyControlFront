@@ -19,6 +19,9 @@ import { BetsHomePage } from "./pages/BetsHomePage";
 import { BetMonthDetailPage } from "./pages/BetMonthDetailPage";
 import { BetCompetitionsPage } from "./pages/BetCompetitionsPage";
 import { BetCompetitionDetailPage } from "./pages/BetCompetitionDetailPage";
+import { BetFriendsPage } from "./pages/BetFriendsPage";
+import { BetFriendDetailPage } from "./pages/BetFriendDetailPage";
+import { BetFriendMonthPage } from "./pages/BetFriendMonthPage";
 
 export function App() {
   return (
@@ -48,6 +51,9 @@ export function App() {
               <Route path="/bets/months/:monthId" element={<BetMonthDetailPage />} />
               <Route path="/bets/competitions" element={<BetCompetitionsPage />} />
               <Route path="/bets/competitions/:id" element={<BetCompetitionDetailPage />} />
+              <Route path="/bets/friends" element={<BetFriendsPage />} />
+              <Route path="/bets/friends/:friendUserId" element={<BetFriendDetailPage />} />
+              <Route path="/bets/friends/:friendUserId/months/:monthId" element={<BetFriendMonthPage />} />
             </Route>
           </Route>
 
