@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
-import { Tab, VisaoGeralResponse } from "../api/types";
+import { InvestmentsOverview, Tab, VisaoGeralResponse } from "../api/types";
 import { DonutTabChart } from "../components/DonutTabChart";
 import { CreateTabModal } from "../components/CreateTabModal";
 import { ManageTabsModal } from "../components/ManageTabsModal";
 import { PeriodNavigator } from "../components/PeriodNavigator";
-import { PlusIcon, SettingsIcon, ChevronRightIcon, UsersIcon } from "../components/icons";
+import { PlusIcon, SettingsIcon, ChevronRightIcon, ChartBarIcon, UsersIcon } from "../components/icons";
 import { formatCurrency } from "../utils/format";
 
 export function HomePage() {
@@ -14,18 +14,21 @@ export function HomePage() {
   const [periodKey, setPeriodKey] = useState<string | undefined>(undefined);
   const [data, setData] = useState<VisaoGeralResponse | null>(null);
   const [tabs, setTabs] = useState<Tab[]>([]);
+  const [investments, setInvestments] = useState<InvestmentsOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [showManage, setShowManage] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [visaoRes, tabsRes] = await Promise.all([
+    const [visaoRes, tabsRes, investmentsRes] = await Promise.all([
       api.get<VisaoGeralResponse>("/dashboard/visao-geral", { params: periodKey ? { period: periodKey } : {} }),
       api.get<Tab[]>("/tabs"),
+      api.get<InvestmentsOverview>("/investments"),
     ]);
     setData(visaoRes.data);
     setTabs(tabsRes.data);
+    setInvestments(investmentsRes.data);
     setLoading(false);
   }, [periodKey]);
 
@@ -88,6 +91,25 @@ export function HomePage() {
         </span>
         <span className="flex shrink-0 items-center gap-1.5">
           <span className="num text-[15px] text-danger">{formatCurrency(data.resumoDevedores.totalPendente)}</span>
+          <ChevronRightIcon className="h-4 w-4 text-ink-soft" />
+        </span>
+      </button>
+
+      <button
+        onClick={() => navigate("/investimentos")}
+        className="card mt-3 flex w-full items-center justify-between gap-3 text-left transition-colors hover:bg-surface-soft active:bg-surface-soft"
+      >
+        <span className="flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success-soft text-success">
+            <ChartBarIcon className="h-5 w-5" />
+          </span>
+          <span>
+            <span className="block text-[15px] font-semibold text-ink">Investimentos</span>
+            <span className="block text-xs text-ink-soft">Quanto você tem guardado</span>
+          </span>
+        </span>
+        <span className="flex shrink-0 items-center gap-1.5">
+          <span className="num text-[15px] text-success">{formatCurrency(investments?.totalInvested ?? 0)}</span>
           <ChevronRightIcon className="h-4 w-4 text-ink-soft" />
         </span>
       </button>

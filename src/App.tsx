@@ -12,6 +12,7 @@ import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { HomePage } from "./pages/HomePage";
 import { OverviewPage } from "./pages/OverviewPage";
 import { DevedoresGeralPage } from "./pages/DevedoresGeralPage";
+import { InvestmentsPage } from "./pages/InvestmentsPage";
 import { GastosPage } from "./pages/GastosPage";
 import { DevedoresPage } from "./pages/DevedoresPage";
 import { DevedorDetailPage } from "./pages/DevedorDetailPage";
@@ -35,6 +36,7 @@ export function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/visao-geral" element={<OverviewPage />} />
               <Route path="/devedores" element={<DevedoresGeralPage />} />
+              <Route path="/investimentos" element={<InvestmentsPage />} />
             </Route>
 
             <Route element={<AppLayout />}>

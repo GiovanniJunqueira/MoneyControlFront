@@ -172,3 +172,25 @@ export function EyeOffIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function ChartBarIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M3 21h18" />
+      <rect x="5" y="12" width="4" height="9" rx="1" />
+      <rect x="10.5" y="7" width="4" height="14" rx="1" />
+      <rect x="16" y="3" width="4" height="18" rx="1" />
+    </svg>
+  );
+}
+
+export function ArrowsUpDownIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M7 3v18" />
+      <path d="M3.5 6.5 7 3l3.5 3.5" />
+      <path d="M17 21V3" />
+      <path d="M13.5 17.5 17 21l3.5-3.5" />
+    </svg>
+  );
+}

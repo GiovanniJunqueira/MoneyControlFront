@@ -16,6 +16,10 @@ export function formatUnits(value: number): string {
   return `${value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} un`;
 }
 
+export function formatPercent(value: number): string {
+  return `${value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+}
+
 /** Formata uma period key "YYYY-MM" como "Setembro de 2026". */
 export function formatMonthName(periodKey: string): string {
   const [year, month] = periodKey.split("-").map(Number);

@@ -295,3 +295,31 @@ export interface BetCompetitionRanking {
   month: number;
   ranking: BetCompetitionRankingEntry[];
 }
+
+export interface Investment {
+  id: string;
+  name: string;
+  amount: number;
+  monthlyRatePercent: number;
+}
+
+export interface InvestmentsOverview {
+  totalInvested: number;
+  investments: Investment[];
+}
+
+export interface InvestmentProjectionItem {
+  id: string;
+  name: string;
+  amount: number;
+  projectedAmount: number;
+  projectedYield: number;
+}
+
+export interface InvestmentProjection {
+  months: number;
+  totalAmount: number;
+  projectedTotal: number;
+  projectedYield: number;
+  items: InvestmentProjectionItem[];
+}
