@@ -93,6 +93,10 @@ Ativado por `user.betsEnabled` (toggle no `SettingsModal.tsx`, ao lado do dark/l
 - **"Excluir" uma casa arquiva, não apaga de verdade** (pedido explícito do usuário): `ManageBetHousesModal` separa `houses` (tudo que veio de `GET /bets/houses`) em `activeHouses` (`archivedFrom == null`, lista arrastável/editável de sempre) e `archivedHouses` (mostradas numa seção separada abaixo, sem drag nem editar, só com "desde DD de mês de AAAA" e um botão "Restaurar"). O botão de excluir (ícone X) continua chamando `DELETE /bets/houses/{id}` normalmente — só que agora esse endpoint arquiva no backend em vez de apagar. `PUT /bets/houses/{id}/restore` desfaz. O drag-and-drop (`handlePointerMove`/`handlePointerUp`) opera só em cima de `activeHouses` (não a lista completa) - ao reordenar, os arquivados voltam pro final da lista completa antes de salvar no state, já que a ordem deles não importa mais.
 - `formatUnits()` em `utils/format.ts` formata em "X,XX un" (pt-BR, 2 casas).
 
+## Cuidado com `toISOString()` pra pegar "a data de hoje"
+
+`new Date().toISOString().slice(0, 10)` converte pra UTC antes de formatar - a partir das 21h no horário de Brasília, já retorna a data de amanhã (bug real relatado pelo usuário, espelhava o mesmo problema do backend rodando em UTC no Render - ver `financeiro-api/CLAUDE.md`). O `todayIso()` de `AddExpenseModal.tsx`/`AddDebtModal.tsx`/`BetMonthDetailPage.tsx` usa `getFullYear()`/`getMonth()`/`getDate()` (fuso local do dispositivo) em vez disso. `StartBetMonthModal.tsx` já fazia certo (`currentYearMonth()`/`isFullyPast()`) - só copiar esse padrão em qualquer "data de hoje" nova.
+
 ## Autenticação
 
 Token JWT salvo em `localStorage` (`financeiro_token`). Interceptor do axios em `api/client.ts` injeta o header e redireciona pra `/login` em qualquer 401. `AuthContext` chama `GET /auth/me` no boot pra restaurar sessão.

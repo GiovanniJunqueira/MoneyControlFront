@@ -8,8 +8,11 @@ import { TransferModal } from "../components/TransferModal";
 import { ArrowLeftIcon, ChevronRightIcon, PencilIcon } from "../components/icons";
 import { formatCurrency, formatUnits, formatDate, formatMonthName } from "../utils/format";
 
+/** Data de hoje no fuso do dispositivo - toISOString() converte pra UTC, o que faria a data virar
+ * amanhã cedo demais no horário de Brasília (a partir das 21h). */
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 /** Separa uma lista de casas (do dia ou do resumo do mês) entre as que têm grupo e as que não têm,
