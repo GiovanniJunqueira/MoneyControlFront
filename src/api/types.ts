@@ -168,12 +168,20 @@ export interface BetHouseGroup {
   name: string;
 }
 
+export interface BetGroupBanca {
+  groupId: string;
+  name: string;
+  banca: number;
+  bancaUnits: number;
+}
+
 export interface BetOverview {
   totalProfitLoss: number;
   totalProfitLossUnits: number;
   totalBanca: number;
   totalBancaUnits: number;
   currentUnitValue: number;
+  groupBanca: BetGroupBanca[];
 }
 
 export interface BetMonthSummary {
