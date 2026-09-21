@@ -235,6 +235,8 @@ export interface BetHouseGroupMonthSummary {
   name: string;
   totalResult: number;
   totalResultUnits: number;
+  banca: number;
+  bancaUnits: number;
 }
 
 export interface BetMonthDays {

@@ -109,6 +109,15 @@ export function BetMonthDetailPage() {
           </span>
           <span className="num text-sm text-ink-soft">banca: {formatCurrency(data.endingBanca)}</span>
         </p>
+        {data.groupSummaries.length > 0 && (
+          <p className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+            {data.groupSummaries.map((g) => (
+              <span key={g.groupId} className="num text-xs text-ink-soft">
+                {g.name}: {formatCurrency(g.banca)}
+              </span>
+            ))}
+          </p>
+        )}
       </div>
 
       {data.open && (
