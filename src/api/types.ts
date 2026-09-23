@@ -3,6 +3,7 @@ export interface User {
   name: string;
   email: string;
   betsEnabled: boolean;
+  whatsappPhone: string | null;
 }
 
 export interface AuthResponse {

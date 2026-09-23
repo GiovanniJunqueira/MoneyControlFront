@@ -9,6 +9,7 @@ interface AuthContextValue {
   register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   updateSettings: (settings: { betsEnabled: boolean }) => Promise<void>;
+  updateWhatsAppPhone: (phone: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -52,8 +53,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(res.data);
   }
 
+  async function updateWhatsAppPhone(phone: string) {
+    const res = await api.put<User>("/auth/whatsapp", { phone });
+    setUser(res.data);
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateSettings }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateSettings, updateWhatsAppPhone }}>
       {children}
     </AuthContext.Provider>
   );
