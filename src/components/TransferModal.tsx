@@ -5,6 +5,7 @@ import { api, extractErrorMessage } from "../api/client";
 interface HouseOption {
   houseId: string;
   name: string;
+  balance: number;
 }
 
 interface Props {
@@ -33,6 +34,11 @@ export function TransferModal({ monthId, date, houses, onClose, onSaved }: Props
   const [saving, setSaving] = useState(false);
 
   const counterpartName = houses.find((h) => h.houseId === counterpartHouseId)?.name ?? "conta";
+  const selectedHouseBalance = houses.find((h) => h.houseId === houseId)?.balance ?? 0;
+
+  function handleWithdrawAll() {
+    setAmount(selectedHouseBalance.toFixed(2).replace(".", ","));
+  }
 
   function handleHouseChange(id: string) {
     setHouseId(id);
@@ -122,7 +128,14 @@ export function TransferModal({ monthId, date, houses, onClose, onSaved }: Props
           <p className="mt-1 text-xs text-ink-soft">A conta também é uma casa cadastrada - pode ser um banco, corretora, etc. Se tiver mais de uma, escolhe qual.</p>
         </div>
         <div>
-          <label className="field-label" htmlFor="transferAmount">Valor</label>
+          <div className="mb-1.5 flex items-center justify-between">
+            <label className="text-[13px] font-medium text-ink-soft" htmlFor="transferAmount">Valor</label>
+            {type === "SAQUE" && (
+              <button type="button" onClick={handleWithdrawAll} className="pill bg-accent-soft text-accent">
+                Sacar tudo
+              </button>
+            )}
+          </div>
           <input
             id="transferAmount"
             required

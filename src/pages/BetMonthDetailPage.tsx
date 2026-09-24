@@ -360,7 +360,7 @@ export function BetMonthDetailPage() {
           monthId={monthId}
           date={transferDate}
           houses={(data.days.find((d) => d.date === transferDate)?.houses ?? [])
-            .map((h) => ({ houseId: h.houseId, name: h.name }))}
+            .map((h) => ({ houseId: h.houseId, name: h.name, balance: h.balance }))}
           onClose={() => setTransferDate(null)}
           onSaved={() => { setTransferDate(null); load(); }}
         />
