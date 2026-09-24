@@ -5,7 +5,8 @@ import { BetMonthDays, BetMonthDayHouse } from "../api/types";
 import { ChangeUnitValueModal } from "../components/ChangeUnitValueModal";
 import { UpdateBetBalanceModal } from "../components/UpdateBetBalanceModal";
 import { TransferModal } from "../components/TransferModal";
-import { ArrowLeftIcon, ChevronRightIcon, PencilIcon } from "../components/icons";
+import { HouseActionModal } from "../components/HouseActionModal";
+import { ArrowLeftIcon, ChevronRightIcon } from "../components/icons";
 import { formatCurrency, formatUnits, formatDate, formatMonthName } from "../utils/format";
 
 /** Data de hoje no fuso do dispositivo - toISOString() converte pra UTC, o que faria a data virar
@@ -38,6 +39,12 @@ interface EditingState {
   startOfDay: number;
 }
 
+interface TransferringState {
+  house: BetMonthDayHouse;
+  date: string;
+  type: "SAQUE" | "DEPOSITO";
+}
+
 interface LastUpdate {
   houseId: string;
   date: string;
@@ -52,7 +59,8 @@ export function BetMonthDetailPage() {
   const [geralOpen, setGeralOpen] = useState(false);
   const [showChangeUnit, setShowChangeUnit] = useState(false);
   const [editing, setEditing] = useState<EditingState | null>(null);
-  const [transferDate, setTransferDate] = useState<string | null>(null);
+  const [choosingHouse, setChoosingHouse] = useState<EditingState | null>(null);
+  const [transferring, setTransferring] = useState<TransferringState | null>(null);
   const [lastUpdate, setLastUpdate] = useState<LastUpdate | null>(null);
 
   const load = useCallback(async () => {
@@ -254,10 +262,16 @@ export function BetMonthDetailPage() {
                         const hPositivo = h.result >= 0;
                         const opening = h.balance - h.result;
                         const isLastUpdated = lastUpdate?.houseId === h.houseId && lastUpdate?.date === day.date;
+                        const editable = day.date <= today;
+                        const RowTag = editable ? "button" : "div";
                         return (
-                          <div
+                          <RowTag
                             key={isLastUpdated ? `${h.houseId}-${lastUpdate!.at}` : h.houseId}
-                            className={`-mx-2 flex items-center justify-between gap-2 rounded-xl px-2 py-1.5 ${isLastUpdated ? "flash-highlight" : ""}`}
+                            type={editable ? "button" : undefined}
+                            onClick={editable ? () => setChoosingHouse({ house: h, date: day.date, startOfDay: opening }) : undefined}
+                            className={`-mx-2 flex w-[calc(100%+1rem)] items-center justify-between gap-2 rounded-xl px-2 py-1.5 text-left transition-colors ${
+                              editable ? "hover:bg-line/70 active:bg-line/70" : ""
+                            } ${isLastUpdated ? "flash-highlight" : ""}`}
                           >
                             <span className="flex min-w-0 items-center gap-2">
                               <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: h.color || "#8E8E93" }} />
@@ -273,17 +287,9 @@ export function BetMonthDetailPage() {
                                 {hPositivo ? "+" : ""}
                                 {formatUnits(h.resultUnits)}
                               </span>
-                              {day.date <= today && (
-                                <button
-                                  onClick={() => setEditing({ house: h, date: day.date, startOfDay: opening })}
-                                  className="icon-btn h-8 w-8"
-                                  aria-label={`Editar ${h.name}`}
-                                >
-                                  <PencilIcon className="h-3.5 w-3.5" />
-                                </button>
-                              )}
+                              {editable && <ChevronRightIcon className="h-4 w-4 text-ink-soft" />}
                             </span>
-                          </div>
+                          </RowTag>
                         );
                       };
                       const { grouped, ungrouped } = splitByGroup(day.houses);
@@ -318,11 +324,6 @@ export function BetMonthDetailPage() {
                       );
                     })()
                   )}
-                  {day.date <= today && (
-                    <button onClick={() => setTransferDate(day.date)} className="btn-secondary mt-2 w-full text-sm">
-                      Saque / Depósito
-                    </button>
-                  )}
                 </div>
               )}
             </div>
@@ -355,14 +356,37 @@ export function BetMonthDetailPage() {
           }}
         />
       )}
-      {transferDate && monthId && (
+      {choosingHouse && (
+        <HouseActionModal
+          houseName={choosingHouse.house.name}
+          onClose={() => setChoosingHouse(null)}
+          onWithdraw={() => {
+            setTransferring({ house: choosingHouse.house, date: choosingHouse.date, type: "SAQUE" });
+            setChoosingHouse(null);
+          }}
+          onDeposit={() => {
+            setTransferring({ house: choosingHouse.house, date: choosingHouse.date, type: "DEPOSITO" });
+            setChoosingHouse(null);
+          }}
+          onEdit={() => {
+            setEditing(choosingHouse);
+            setChoosingHouse(null);
+          }}
+        />
+      )}
+      {transferring && monthId && (
         <TransferModal
           monthId={monthId}
-          date={transferDate}
-          houses={(data.days.find((d) => d.date === transferDate)?.houses ?? [])
-            .map((h) => ({ houseId: h.houseId, name: h.name, balance: h.balance }))}
-          onClose={() => setTransferDate(null)}
-          onSaved={() => { setTransferDate(null); load(); }}
+          date={transferring.date}
+          houseId={transferring.house.houseId}
+          houseName={transferring.house.name}
+          houseBalance={transferring.house.balance}
+          initialType={transferring.type}
+          counterparts={(data.days.find((d) => d.date === transferring.date)?.houses ?? [])
+            .filter((h) => h.houseId !== transferring.house.houseId)
+            .map((h) => ({ houseId: h.houseId, name: h.name }))}
+          onClose={() => setTransferring(null)}
+          onSaved={() => { setTransferring(null); load(); }}
         />
       )}
     </div>

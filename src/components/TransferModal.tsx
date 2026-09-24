@@ -2,57 +2,41 @@ import { FormEvent, useState } from "react";
 import { Modal } from "./Modal";
 import { api, extractErrorMessage } from "../api/client";
 
-interface HouseOption {
+interface CounterpartOption {
   houseId: string;
   name: string;
-  balance: number;
 }
 
 interface Props {
   monthId: string;
   date: string;
-  houses: HouseOption[];
+  houseId: string;
+  houseName: string;
+  houseBalance: number;
+  initialType: "SAQUE" | "DEPOSITO";
+  counterparts: CounterpartOption[];
   onClose: () => void;
   onSaved: () => void;
 }
 
 /** Casa cujo nome é literalmente "Banco" vira o padrão da conta - continua rápido pra quem só tem
  * uma, mas agora dá pra trocar (tem gente com mais de uma conta/banco). */
-function defaultCounterpart(houses: HouseOption[], exceptId: string): string {
-  const banco = houses.find((h) => h.name.toLowerCase() === "banco" && h.houseId !== exceptId);
-  if (banco) return banco.houseId;
-  const fallback = houses.find((h) => h.houseId !== exceptId);
-  return fallback?.houseId ?? "";
+function defaultCounterpart(counterparts: CounterpartOption[]): string {
+  const banco = counterparts.find((h) => h.name.toLowerCase() === "banco");
+  return banco?.houseId ?? counterparts[0]?.houseId ?? "";
 }
 
-export function TransferModal({ monthId, date, houses, onClose, onSaved }: Props) {
-  const [type, setType] = useState<"SAQUE" | "DEPOSITO">("SAQUE");
-  const [houseId, setHouseId] = useState(houses[0]?.houseId ?? "");
-  const [counterpartHouseId, setCounterpartHouseId] = useState(() => defaultCounterpart(houses, houses[0]?.houseId ?? ""));
+export function TransferModal({ monthId, date, houseId, houseName, houseBalance, initialType, counterparts, onClose, onSaved }: Props) {
+  const [type, setType] = useState<"SAQUE" | "DEPOSITO">(initialType);
+  const [counterpartHouseId, setCounterpartHouseId] = useState(() => defaultCounterpart(counterparts));
   const [amount, setAmount] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const counterpartName = houses.find((h) => h.houseId === counterpartHouseId)?.name ?? "conta";
-  const selectedHouseBalance = houses.find((h) => h.houseId === houseId)?.balance ?? 0;
+  const counterpartName = counterparts.find((h) => h.houseId === counterpartHouseId)?.name ?? "conta";
 
   function handleWithdrawAll() {
-    setAmount(selectedHouseBalance.toFixed(2).replace(".", ","));
-  }
-
-  function handleHouseChange(id: string) {
-    setHouseId(id);
-    if (id === counterpartHouseId) {
-      setCounterpartHouseId(defaultCounterpart(houses, id));
-    }
-  }
-
-  function handleCounterpartChange(id: string) {
-    setCounterpartHouseId(id);
-    if (id === houseId) {
-      const fallback = houses.find((h) => h.houseId !== id);
-      setHouseId(fallback?.houseId ?? "");
-    }
+    setAmount(houseBalance.toFixed(2).replace(".", ","));
   }
 
   async function handleSubmit(e: FormEvent) {
@@ -74,8 +58,17 @@ export function TransferModal({ monthId, date, houses, onClose, onSaved }: Props
     }
   }
 
+  if (counterparts.length === 0) {
+    return (
+      <Modal title={houseName} onClose={onClose}>
+        <p className="text-sm text-ink-soft">Você precisa de pelo menos mais uma casa cadastrada pra fazer saque ou depósito.</p>
+        <button type="button" onClick={onClose} className="btn-secondary mt-4 w-full">Fechar</button>
+      </Modal>
+    );
+  }
+
   return (
-    <Modal title="Saque ou depósito" onClose={onClose}>
+    <Modal title={houseName} onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <span className="field-label">Tipo</span>
@@ -101,16 +94,6 @@ export function TransferModal({ monthId, date, houses, onClose, onSaved }: Props
           </div>
         </div>
         <div>
-          <label className="field-label" htmlFor="transferHouse">
-            {type === "SAQUE" ? "De qual casa" : "Pra qual casa"}
-          </label>
-          <select id="transferHouse" required className="field" value={houseId} onChange={(e) => handleHouseChange(e.target.value)}>
-            {houses.map((h) => (
-              <option key={h.houseId} value={h.houseId}>{h.name}</option>
-            ))}
-          </select>
-        </div>
-        <div>
           <label className="field-label" htmlFor="transferCounterpart">
             {type === "SAQUE" ? "Pra qual conta" : "De qual conta"}
           </label>
@@ -119,13 +102,12 @@ export function TransferModal({ monthId, date, houses, onClose, onSaved }: Props
             required
             className="field"
             value={counterpartHouseId}
-            onChange={(e) => handleCounterpartChange(e.target.value)}
+            onChange={(e) => setCounterpartHouseId(e.target.value)}
           >
-            {houses.map((h) => (
+            {counterparts.map((h) => (
               <option key={h.houseId} value={h.houseId}>{h.name}</option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-ink-soft">A conta também é uma casa cadastrada - pode ser um banco, corretora, etc. Se tiver mais de uma, escolhe qual.</p>
         </div>
         <div>
           <div className="mb-1.5 flex items-center justify-between">
@@ -148,13 +130,13 @@ export function TransferModal({ monthId, date, houses, onClose, onSaved }: Props
         </div>
         <p className="text-xs text-ink-soft">
           {type === "SAQUE"
-            ? `Tira o valor da casa e coloca em "${counterpartName}", sem contar como resultado da aposta.`
-            : `Tira o valor de "${counterpartName}" e coloca na casa, sem contar como resultado da aposta.`}
+            ? `Tira o valor de "${houseName}" e coloca em "${counterpartName}", sem contar como resultado da aposta.`
+            : `Tira o valor de "${counterpartName}" e coloca em "${houseName}", sem contar como resultado da aposta.`}
         </p>
         {error && <p className="text-sm text-danger">{error}</p>}
         <div className="flex gap-3 pt-2">
           <button type="button" onClick={onClose} className="btn-secondary flex-1">Cancelar</button>
-          <button type="submit" disabled={saving || !houseId || !counterpartHouseId} className="btn-primary flex-1">
+          <button type="submit" disabled={saving || !counterpartHouseId} className="btn-primary flex-1">
             {saving ? "Salvando…" : "Confirmar"}
           </button>
         </div>
