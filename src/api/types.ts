@@ -16,6 +16,7 @@ export interface Category {
   name: string;
   color: string | null;
   icon: string | null;
+  monthlyBudget: number | null;
 }
 
 export interface FiscalPeriod {
@@ -32,6 +33,9 @@ export interface Expense {
   date: string;
   category: Category;
   recurringGroupId: string | null;
+  splitDebtorId: string | null;
+  splitDebtorName: string | null;
+  splitAmount: number | null;
 }
 
 export interface ExpenseListResponse {
@@ -46,6 +50,8 @@ export interface CategoriaResumo {
   total: number;
   quantidade: number;
   percentual: number;
+  orcamento: number | null;
+  percentualOrcamento: number | null;
 }
 
 export interface GastosDashboard {

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { api } from "../api/client";
-import { Category, Expense, GastosDashboard } from "../api/types";
+import { Category, DebtorSummary, Expense, GastosDashboard } from "../api/types";
 import { PeriodNavigator } from "../components/PeriodNavigator";
 import { CategoryBar } from "../components/CategoryBar";
 import { AddExpenseModal } from "../components/AddExpenseModal";
@@ -17,6 +17,7 @@ export function GastosPage() {
   const [periodKey, setPeriodKey] = useState<string | undefined>(undefined);
   const [dashboard, setDashboard] = useState<GastosDashboard | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [debtors, setDebtors] = useState<DebtorSummary[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [showAddExpense, setShowAddExpense] = useState(false);
@@ -28,12 +29,14 @@ export function GastosPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [dashRes, catRes] = await Promise.all([
+    const [dashRes, catRes, debtorsRes] = await Promise.all([
       api.get<GastosDashboard>(`/tabs/${tabId}/dashboard/gastos`, { params: periodKey ? { period: periodKey } : {} }),
       api.get<Category[]>(`/tabs/${tabId}/categories`),
+      api.get<DebtorSummary[]>(`/tabs/${tabId}/debtors`),
     ]);
     setDashboard(dashRes.data);
     setCategories(catRes.data);
+    setDebtors(debtorsRes.data);
     setLoading(false);
   }, [tabId, periodKey]);
 
@@ -126,6 +129,9 @@ export function GastosPage() {
                     <p className="truncate text-[15px] font-medium text-ink">
                       {e.description || e.category.name}
                       {e.recurringGroupId && <span className="pill ml-1.5 bg-accent-soft text-accent">Recorrente</span>}
+                      {e.splitDebtorName && (
+                        <span className="pill ml-1.5 bg-success-soft text-success">Dividido com {e.splitDebtorName}</span>
+                      )}
                     </p>
                     <p className="text-xs text-ink-soft">{formatDate(e.date)} · {e.category.name}</p>
                   </div>
@@ -168,7 +174,13 @@ export function GastosPage() {
       </div>
 
       {showAddExpense && (
-        <AddExpenseModal tabId={tabId} categories={categories} onClose={() => setShowAddExpense(false)} onSaved={() => { setShowAddExpense(false); load(); }} />
+        <AddExpenseModal
+          tabId={tabId}
+          categories={categories}
+          debtors={debtors}
+          onClose={() => setShowAddExpense(false)}
+          onSaved={() => { setShowAddExpense(false); load(); }}
+        />
       )}
       {editingExpense && (
         <EditExpenseModal

@@ -1,11 +1,12 @@
 import { FormEvent, useState } from "react";
 import { Modal } from "./Modal";
 import { api, extractErrorMessage } from "../api/client";
-import { Category } from "../api/types";
+import { Category, DebtorSummary } from "../api/types";
 
 interface Props {
   tabId: string;
   categories: Category[];
+  debtors: DebtorSummary[];
   onClose: () => void;
   onSaved: () => void;
 }
@@ -19,15 +20,25 @@ function todayIso() {
 
 type Recurrence = "NONE" | "FIXED" | "INDEFINITE";
 
-export function AddExpenseModal({ tabId, categories, onClose, onSaved }: Props) {
+export function AddExpenseModal({ tabId, categories, debtors, onClose, onSaved }: Props) {
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [date, setDate] = useState(todayIso());
   const [recurrence, setRecurrence] = useState<Recurrence>("NONE");
   const [recurrenceMonths, setRecurrenceMonths] = useState("12");
+  const [splitting, setSplitting] = useState(false);
+  const [splitDebtorId, setSplitDebtorId] = useState(debtors[0]?.id ?? "");
+  const [splitAmount, setSplitAmount] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  function handleFillHalf() {
+    const total = Number(amount.replace(",", "."));
+    if (Number.isFinite(total) && total > 0) {
+      setSplitAmount((total / 2).toFixed(2).replace(".", ","));
+    }
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -37,6 +48,10 @@ export function AddExpenseModal({ tabId, categories, onClose, onSaved }: Props) 
     }
     if (recurrence === "FIXED" && (!recurrenceMonths || Number(recurrenceMonths) < 1)) {
       setError("Informe por quantos meses o gasto se repete.");
+      return;
+    }
+    if (splitting && (!splitDebtorId || !splitAmount)) {
+      setError("Escolha a pessoa e o valor dela pra dividir o gasto.");
       return;
     }
     setError(null);
@@ -49,6 +64,8 @@ export function AddExpenseModal({ tabId, categories, onClose, onSaved }: Props) 
         date,
         recurrence: recurrence === "NONE" ? undefined : recurrence,
         recurrenceMonths: recurrence === "FIXED" ? Number(recurrenceMonths) : undefined,
+        splitDebtorId: splitting ? splitDebtorId : undefined,
+        splitAmount: splitting ? Number(splitAmount.replace(",", ".")) : undefined,
       });
       onSaved();
     } catch (err) {
@@ -131,6 +148,58 @@ export function AddExpenseModal({ tabId, categories, onClose, onSaved }: Props) 
             </p>
           )}
         </div>
+
+        {debtors.length > 0 && (
+          <div>
+            <label className="flex items-center gap-2.5">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded"
+                checked={splitting}
+                onChange={(e) => setSplitting(e.target.checked)}
+              />
+              <span className="text-sm text-ink">Dividir com alguém</span>
+            </label>
+            {splitting && (
+              <div className="mt-3 space-y-3 rounded-2xl bg-surface-soft p-3">
+                <div>
+                  <label className="field-label" htmlFor="splitDebtor">Com quem</label>
+                  <select
+                    id="splitDebtor"
+                    required
+                    className="field"
+                    value={splitDebtorId}
+                    onChange={(e) => setSplitDebtorId(e.target.value)}
+                  >
+                    {debtors.map((d) => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <label className="text-[13px] font-medium text-ink-soft" htmlFor="splitAmount">Valor da pessoa</label>
+                    <button type="button" onClick={handleFillHalf} className="pill bg-accent-soft text-accent">
+                      Metade
+                    </button>
+                  </div>
+                  <input
+                    id="splitAmount"
+                    required
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    className="field num"
+                    value={splitAmount}
+                    onChange={(e) => setSplitAmount(e.target.value)}
+                  />
+                </div>
+                <p className="text-xs text-ink-soft">
+                  O gasto fica lançado no valor total. Esse valor da pessoa vira uma dívida pra ela em Devedores.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {error && <p className="text-sm text-danger">{error}</p>}
 

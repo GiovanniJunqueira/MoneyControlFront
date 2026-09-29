@@ -70,6 +70,22 @@ Cada ocorrência/parcela é uma linha **real** e independente (o backend materia
 - **Excluir**: `GastosPage.tsx`/`DevedorDetailPage.tsx` só abrem o `ConfirmDeleteRecurringModal.tsx` (componente novo, compartilhado pelas duas telas) quando o item tem `recurringGroupId`/`installmentGroupId` — perguntando "excluir só esse/essa" vs. "esse/essa e os/as futuros/as" (manda `applyToFuture` como query param no DELETE). Sem grupo, continua excluindo direto sem perguntar, como sempre foi.
 - **Badges**: gasto recorrente mostra uma `.pill` "Recorrente" ao lado da descrição em `GastosPage.tsx`; parcela de dívida mostra "Parcela X/Y" ao lado do status em `DevedorDetailPage.tsx` (usa `installmentNumber`/`installmentTotal` vindos da API).
 
+## Orçamento por categoria
+
+Pedido do usuário pensando em fluxo de caixa - saber quando uma categoria tá estourando o limite, não só quanto foi gasto. Gerenciado inteiramente dentro de `ManageCategoriesModal.tsx`, sem tela nova:
+
+- **Criar**: campo "Orçamento mensal (opcional)" no formulário de nova categoria, manda `monthlyBudget` no `POST` (omitido = sem orçamento).
+- **Editar categoria já existente**: **não existe uma tela de edição separada pra categoria** (só nome/cor eram fixos até aqui, sem UI de editar) - em vez de criar uma, cada linha da lista já ganhou um campo de orçamento inline (`budgetDrafts`, um `Record<categoryId, string>` local pra cada rascunho) que salva sozinho no `onBlur` (`PUT /tabs/{tabId}/categories/{id}`, reenviando nome/cor/ícone que já tinha - o backend substitui a categoria inteira, não faz PATCH parcial). Mostra "Salvando…" ao lado durante a chamada.
+- **`CategoryBar.tsx`** (já usado pra mostrar "por categoria" em `GastosPage`/`OverviewPage`) ganhou uma segunda barra de progresso opcional, só quando a categoria tem `orcamento` - com cor por **severidade** (verde <80%, amarelo 80-99%, vermelho ≥100%, usando os tokens `--color-success`/`--color-warning`/`--color-danger`, não a cor da própria categoria) porque estourar o orçamento precisa chamar atenção independente de qual categoria for. É um conceito visualmente parecido mas semanticamente diferente da barra de cima (aquela é "fatia do gasto total do período", essa é "quanto do limite já foi usado").
+
+## Dividir gasto com alguém (rateio)
+
+Pedido do usuário: lançar um gasto e marcar que parte dele é de outra pessoa - o valor dela vira uma dívida automaticamente em Devedores (ver `financeiro-api/CLAUDE.md` pro porquê isso é uma exceção deliberada à independência Gastos/Devedores).
+
+- **`AddExpenseModal.tsx`** busca a lista de devedores da aba (`GastosPage.load()` já busca `GET /tabs/{tabId}/debtors` em paralelo com dashboard/categorias, passa como prop `debtors`) e só mostra o checkbox "Dividir com alguém" se a aba já tiver pelo menos uma pessoa cadastrada em Devedores (senão não faz sentido oferecer a opção). Marcado, revela um `<select>` "Com quem" + campo "Valor da pessoa" com um atalho `.pill` "Metade" (preenche automaticamente com `valor total ÷ 2`, recalculado a partir do campo de valor já digitado - só um preenchimento único, não fica sincronizado se o valor total mudar depois). Manda `splitDebtorId`/`splitAmount` no `POST /tabs/{tabId}/expenses`.
+- **Não dá pra editar a divisão depois** pelo `EditExpenseModal.tsx` (o backend também não suporta, ver CLAUDE.md da API) - se precisar mudar o valor, edita a dívida gerada diretamente em Devedores.
+- **`GastosPage.tsx`** mostra uma `.pill` verde "Dividido com {nome}" ao lado da descrição do lançamento (mesmo lugar/estilo do badge "Recorrente" já existente) quando `expense.splitDebtorName` não é `null`.
+
 ## Módulo Bets — área separada, fora do layout do Financeiro
 
 Ativado por `user.betsEnabled` (toggle no `SettingsModal.tsx`, ao lado do dark/light). Não tem nada a ver com abas — é uma segunda "aplicação" dentro do mesmo app React, com seu próprio layout (`BetsLayout.tsx`: topbar "Bets" + botão pra voltar ao Financeiro + Configurações + Sair, sem `Sidebar`/`AppLayout`).
