@@ -20,7 +20,8 @@ export function EditExpenseModal({ tabId, expense, categories, onClose, onSaved 
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const isRecurring = expense.recurringGroupId !== null;
+  const isGroup = expense.recurringGroupId !== null || expense.installmentGroupId !== null;
+  const isInstallment = expense.installmentGroupId !== null;
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -73,7 +74,7 @@ export function EditExpenseModal({ tabId, expense, categories, onClose, onSaved 
             onChange={(e) => setDate(e.target.value)}
           />
         </div>
-        {isRecurring && (
+        {isGroup && (
           <label className="flex items-start gap-2.5 rounded-2xl bg-surface-soft p-3 text-sm">
             <input
               type="checkbox"
@@ -82,8 +83,14 @@ export function EditExpenseModal({ tabId, expense, categories, onClose, onSaved 
               onChange={(e) => setApplyToFuture(e.target.checked)}
             />
             <span>
-              <span className="block font-medium text-ink">Aplicar às próximas ocorrências também</span>
-              <span className="block text-xs text-ink-soft">Categoria, valor e descrição mudam em todos os meses futuros dessa recorrência (a data de cada um continua a mesma).</span>
+              <span className="block font-medium text-ink">
+                {isInstallment ? "Aplicar às próximas parcelas também" : "Aplicar às próximas ocorrências também"}
+              </span>
+              <span className="block text-xs text-ink-soft">
+                {isInstallment
+                  ? "Categoria, valor e descrição mudam em todas as parcelas futuras (a data de cada uma continua a mesma)."
+                  : "Categoria, valor e descrição mudam em todos os meses futuros dessa recorrência (a data de cada um continua a mesma)."}
+              </span>
             </span>
           </label>
         )}

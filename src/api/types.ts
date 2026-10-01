@@ -33,6 +33,9 @@ export interface Expense {
   date: string;
   category: Category;
   recurringGroupId: string | null;
+  installmentGroupId: string | null;
+  installmentNumber: number | null;
+  installmentTotal: number | null;
   splitDebtorId: string | null;
   splitDebtorName: string | null;
   splitAmount: number | null;

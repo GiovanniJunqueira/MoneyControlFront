@@ -70,6 +70,14 @@ Cada ocorrência/parcela é uma linha **real** e independente (o backend materia
 - **Excluir**: `GastosPage.tsx`/`DevedorDetailPage.tsx` só abrem o `ConfirmDeleteRecurringModal.tsx` (componente novo, compartilhado pelas duas telas) quando o item tem `recurringGroupId`/`installmentGroupId` — perguntando "excluir só esse/essa" vs. "esse/essa e os/as futuros/as" (manda `applyToFuture` como query param no DELETE). Sem grupo, continua excluindo direto sem perguntar, como sempre foi.
 - **Badges**: gasto recorrente mostra uma `.pill` "Recorrente" ao lado da descrição em `GastosPage.tsx`; parcela de dívida mostra "Parcela X/Y" ao lado do status em `DevedorDetailPage.tsx` (usa `installmentNumber`/`installmentTotal` vindos da API).
 
+## Parcelamento em Gastos (além da recorrência)
+
+Pedido do usuário: a "Recorrência" existente serve pra assinatura/gasto repetido com o MESMO valor todo mês - faltava uma opção pra compra parcelada (valor TOTAL dividido em N parcelas). `AddExpenseModal.tsx` ganhou um checkbox "Parcelar" (mesmo padrão do `AddDebtModal.tsx`): quando marcado, desabilita o seletor de "Recorrência" (e vice-versa - os dois se excluem mutuamente, reforçando no frontend a mesma regra que o backend já rejeita) e revela "Quantas vezes" com uma prévia ao vivo (`Xx de R$Y,YY, uma por mês a partir da data acima` - cálculo só de exibição, o backend é quem divide de verdade). O label do campo de valor vira "Valor total" e o de data vira "Data da 1ª parcela" quando `parcelar` está ativo.
+
+- **Editar**: `EditExpenseModal.tsx` trocou o antigo `isRecurring` por `isGroup` (`recurringGroupId !== null || installmentGroupId !== null`) pra decidir se mostra o checkbox "Aplicar às [próximas ocorrências/parcelas] futuras também" - o texto do checkbox muda conforme `isInstallment`, mas o aviso é o mesmo da dívida parcelada (`EditDebtModal.tsx`): o valor digitado também é aplicado a todas as parcelas futuras, perdendo a divisão exata (mesma troca já aceita lá).
+- **Excluir**: `GastosPage.handleDeleteExpense()` abre o `ConfirmDeleteRecurringModal` (já genérico, sem mudança nele) quando `recurringGroupId` OU `installmentGroupId` não é nulo.
+- **Badge**: `GastosPage.tsx` mostra uma `.pill` "Parcela X/Y" ao lado da descrição (mesmo lugar/estilo de "Recorrente" e "Dividido com {nome}"), usando `installmentNumber`/`installmentTotal` da API - mesmo padrão já usado em `DevedorDetailPage.tsx` pra dívida parcelada.
+
 ## Orçamento por categoria
 
 Pedido do usuário pensando em fluxo de caixa - saber quando uma categoria tá estourando o limite, não só quanto foi gasto. Gerenciado inteiramente dentro de `ManageCategoriesModal.tsx`, sem tela nova:

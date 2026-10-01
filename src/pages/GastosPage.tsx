@@ -45,7 +45,7 @@ export function GastosPage() {
   }, [load]);
 
   function handleDeleteExpense(expense: Expense) {
-    if (expense.recurringGroupId) {
+    if (expense.recurringGroupId || expense.installmentGroupId) {
       setDeletingExpense(expense);
     } else {
       api.delete(`/tabs/${tabId}/expenses/${expense.id}`).then(load);
@@ -129,6 +129,9 @@ export function GastosPage() {
                     <p className="truncate text-[15px] font-medium text-ink">
                       {e.description || e.category.name}
                       {e.recurringGroupId && <span className="pill ml-1.5 bg-accent-soft text-accent">Recorrente</span>}
+                      {e.installmentGroupId && (
+                        <span className="pill ml-1.5 bg-accent-soft text-accent">Parcela {e.installmentNumber}/{e.installmentTotal}</span>
+                      )}
                       {e.splitDebtorName && (
                         <span className="pill ml-1.5 bg-success-soft text-success">Dividido com {e.splitDebtorName}</span>
                       )}

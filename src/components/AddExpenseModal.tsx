@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { Modal } from "./Modal";
 import { api, extractErrorMessage } from "../api/client";
 import { Category, DebtorSummary } from "../api/types";
+import { formatCurrency } from "../utils/format";
 
 interface Props {
   tabId: string;
@@ -27,6 +28,8 @@ export function AddExpenseModal({ tabId, categories, debtors, onClose, onSaved }
   const [date, setDate] = useState(todayIso());
   const [recurrence, setRecurrence] = useState<Recurrence>("NONE");
   const [recurrenceMonths, setRecurrenceMonths] = useState("12");
+  const [parcelar, setParcelar] = useState(false);
+  const [installments, setInstallments] = useState("2");
   const [splitting, setSplitting] = useState(false);
   const [splitDebtorId, setSplitDebtorId] = useState(debtors[0]?.id ?? "");
   const [splitAmount, setSplitAmount] = useState("");
@@ -40,6 +43,11 @@ export function AddExpenseModal({ tabId, categories, debtors, onClose, onSaved }
     }
   }
 
+  const totalValue = Number(amount.replace(",", "."));
+  const installmentsValue = Number(installments);
+  const previewPerInstallment =
+    parcelar && !Number.isNaN(totalValue) && installmentsValue > 0 ? totalValue / installmentsValue : null;
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!categoryId) {
@@ -48,6 +56,10 @@ export function AddExpenseModal({ tabId, categories, debtors, onClose, onSaved }
     }
     if (recurrence === "FIXED" && (!recurrenceMonths || Number(recurrenceMonths) < 1)) {
       setError("Informe por quantos meses o gasto se repete.");
+      return;
+    }
+    if (parcelar && (!installments || installmentsValue < 2)) {
+      setError("Informe em quantas vezes (mínimo 2).");
       return;
     }
     if (splitting && (!splitDebtorId || !splitAmount)) {
@@ -59,11 +71,12 @@ export function AddExpenseModal({ tabId, categories, debtors, onClose, onSaved }
     try {
       await api.post(`/tabs/${tabId}/expenses`, {
         categoryId,
-        amount: Number(amount.replace(",", ".")),
+        amount: totalValue,
         description: description || undefined,
         date,
-        recurrence: recurrence === "NONE" ? undefined : recurrence,
-        recurrenceMonths: recurrence === "FIXED" ? Number(recurrenceMonths) : undefined,
+        recurrence: !parcelar && recurrence !== "NONE" ? recurrence : undefined,
+        recurrenceMonths: !parcelar && recurrence === "FIXED" ? Number(recurrenceMonths) : undefined,
+        installments: parcelar ? installmentsValue : undefined,
         splitDebtorId: splitting ? splitDebtorId : undefined,
         splitAmount: splitting ? Number(splitAmount.replace(",", ".")) : undefined,
       });
@@ -89,7 +102,9 @@ export function AddExpenseModal({ tabId, categories, debtors, onClose, onSaved }
         </div>
 
         <div>
-          <label className="field-label" htmlFor="amount">{recurrence === "NONE" ? "Valor" : "Valor mensal"}</label>
+          <label className="field-label" htmlFor="amount">
+            {parcelar ? "Valor total" : recurrence === "NONE" ? "Valor" : "Valor mensal"}
+          </label>
           <input
             id="amount"
             required
@@ -107,7 +122,9 @@ export function AddExpenseModal({ tabId, categories, debtors, onClose, onSaved }
         </div>
 
         <div>
-          <label className="field-label" htmlFor="date">{recurrence === "NONE" ? "Data" : "1ª data"}</label>
+          <label className="field-label" htmlFor="date">
+            {parcelar ? "Data da 1ª parcela" : recurrence === "NONE" ? "Data" : "1ª data"}
+          </label>
           <input id="date" type="date" required className="field" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
 
@@ -122,8 +139,9 @@ export function AddExpenseModal({ tabId, categories, debtors, onClose, onSaved }
               <button
                 key={value}
                 type="button"
+                disabled={parcelar}
                 onClick={() => setRecurrence(value)}
-                className={`rounded-2xl border-2 px-2 py-2.5 text-[13px] font-medium transition-colors ${
+                className={`rounded-2xl border-2 px-2 py-2.5 text-[13px] font-medium transition-colors disabled:opacity-40 ${
                   recurrence === value ? "border-accent bg-accent-soft text-accent" : "border-line text-ink-soft"
                 }`}
               >
@@ -131,7 +149,7 @@ export function AddExpenseModal({ tabId, categories, debtors, onClose, onSaved }
               </button>
             ))}
           </div>
-          {recurrence === "FIXED" && (
+          {recurrence === "FIXED" && !parcelar && (
             <input
               className="field num mt-2"
               inputMode="numeric"
@@ -140,12 +158,43 @@ export function AddExpenseModal({ tabId, categories, debtors, onClose, onSaved }
               onChange={(e) => setRecurrenceMonths(e.target.value)}
             />
           )}
-          {recurrence !== "NONE" && (
+          {recurrence !== "NONE" && !parcelar && (
             <p className="mt-1 text-xs text-ink-soft">
               {recurrence === "FIXED"
                 ? "Lança esse gasto todo mês, a partir da data acima, pelo número de meses informado."
                 : "Lança esse gasto todo mês, a partir da data acima, por um bom tempo à frente (sem precisar escolher quando acaba)."}
             </p>
+          )}
+        </div>
+
+        <div>
+          <label className="flex items-center gap-2.5">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded"
+              checked={parcelar}
+              disabled={recurrence !== "NONE"}
+              onChange={(e) => setParcelar(e.target.checked)}
+            />
+            <span className="text-sm text-ink">Parcelar</span>
+          </label>
+          {parcelar && (
+            <div className="mt-3 space-y-2 rounded-2xl bg-surface-soft p-3">
+              <label className="field-label" htmlFor="installments">Quantas vezes</label>
+              <input
+                id="installments"
+                required
+                inputMode="numeric"
+                className="field num"
+                value={installments}
+                onChange={(e) => setInstallments(e.target.value)}
+              />
+              {previewPerInstallment !== null && (
+                <p className="text-xs text-ink-soft">
+                  {installmentsValue}x de {formatCurrency(previewPerInstallment)}, uma por mês a partir da data acima.
+                </p>
+              )}
+            </div>
           )}
         </div>
 
