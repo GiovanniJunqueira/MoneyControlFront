@@ -77,9 +77,9 @@ export function GastosPage() {
           <h1 className="text-3xl font-extrabold tracking-tight text-ink">Gastos</h1>
           <p className="mt-1 text-ink-soft">Seu resumo do período.</p>
         </div>
-        <div className="hidden gap-2 md:flex">
+        <div className="flex gap-2">
           <button onClick={() => setShowCategories(true)} className="btn-secondary">Categorias</button>
-          <button onClick={() => setShowAddExpense(true)} className="btn-primary gap-1.5">
+          <button onClick={() => setShowAddExpense(true)} className="hidden btn-primary gap-1.5 md:flex">
             <PlusIcon className="h-4 w-4" /> Novo gasto
           </button>
         </div>
@@ -162,11 +162,8 @@ export function GastosPage() {
         )}
       </div>
 
-      {/* Ações mobile */}
-      <div className="fixed bottom-20 right-4 flex flex-col items-end gap-2 md:hidden">
-        <button onClick={() => setShowCategories(true)} className="btn-secondary bg-surface shadow-lg shadow-black/10">
-          Categorias
-        </button>
+      {/* Ação mobile - só o "+" flutua (Categorias já fica fixo no cabeçalho, em todo tamanho de tela) */}
+      <div className="fixed bottom-20 right-4 md:hidden">
         <button
           onClick={() => setShowAddExpense(true)}
           className="flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-lg shadow-accent/30"
