@@ -243,7 +243,7 @@ export function AddExpenseModal({ tabId, categories, debtors, onClose, onSaved }
                   />
                 </div>
                 <p className="text-xs text-ink-soft">
-                  O gasto fica lançado no valor total. Esse valor da pessoa vira uma dívida pra ela em Devedores.
+                  No seu gasto fica só a sua parte (total menos o valor da pessoa). O valor dela vira uma dívida em Devedores{parcelar ? ", parcelada do mesmo jeito" : ""}.
                 </p>
               </div>
             )}
