@@ -9,17 +9,18 @@ import { formatCurrency } from "../utils/format";
 
 export function OverviewPage() {
   const [periodKey, setPeriodKey] = useState<string | undefined>(undefined);
+  const [total, setTotal] = useState(false);
   const [data, setData] = useState<VisaoGeralResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     setLoading(true);
     const res = await api.get<VisaoGeralResponse>("/dashboard/visao-geral", {
-      params: periodKey ? { period: periodKey } : {},
+      params: { ...(periodKey ? { period: periodKey } : {}), total: total || undefined },
     });
     setData(res.data);
     setLoading(false);
-  }, [periodKey]);
+  }, [periodKey, total]);
 
   useEffect(() => {
     load();
@@ -41,7 +42,30 @@ export function OverviewPage() {
         <p className="mt-1 text-ink-soft">A soma de todas as suas abas.</p>
       </div>
 
-      <PeriodNavigator period={{ key: data.periodKey }} onNavigate={setPeriodKey} />
+      <div className="mb-4 grid grid-cols-2 gap-2">
+        <button
+          onClick={() => setTotal(false)}
+          className={`rounded-2xl border-2 px-3 py-2 text-[13px] font-medium transition-colors ${
+            !total ? "border-accent bg-accent-soft text-accent" : "border-line text-ink-soft"
+          }`}
+        >
+          Por período
+        </button>
+        <button
+          onClick={() => setTotal(true)}
+          className={`rounded-2xl border-2 px-3 py-2 text-[13px] font-medium transition-colors ${
+            total ? "border-accent bg-accent-soft text-accent" : "border-line text-ink-soft"
+          }`}
+        >
+          Ver total
+        </button>
+      </div>
+
+      {total ? (
+        <p className="mb-6 text-sm text-ink-soft">Soma de tudo, todos os meses.</p>
+      ) : (
+        <PeriodNavigator period={{ key: data.periodKey ?? "" }} onNavigate={setPeriodKey} />
+      )}
 
       <div className="mb-4 grid grid-cols-2 gap-3">
         <div className="card">

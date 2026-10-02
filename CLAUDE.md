@@ -35,6 +35,7 @@ O conceito original era um "livro-caixa analógico" (papel, tinta, serifada Frau
 ```
 /                           -> HomePage (dentro de HomeLayout: topo simples, sem nav de Gastos/Devedores)
 /visao-geral                -> OverviewPage (idem, HomeLayout)
+/devedores                  -> DevedoresGeralPage (idem, HomeLayout) - devedores de TODAS as abas, agrupados por pessoa
 /tabs/:tabId/gastos         -> GastosPage (dentro de AppLayout: sidebar com Gastos/Devedores da aba)
 /tabs/:tabId/devedores      -> DevedoresPage
 /tabs/:tabId/devedores/:id  -> DevedorDetailPage
@@ -77,6 +78,20 @@ Pedido do usuário: a "Recorrência" existente serve pra assinatura/gasto repeti
 - **Editar**: `EditExpenseModal.tsx` trocou o antigo `isRecurring` por `isGroup` (`recurringGroupId !== null || installmentGroupId !== null`) pra decidir se mostra o checkbox "Aplicar às [próximas ocorrências/parcelas] futuras também" - o texto do checkbox muda conforme `isInstallment`, mas o aviso é o mesmo da dívida parcelada (`EditDebtModal.tsx`): o valor digitado também é aplicado a todas as parcelas futuras, perdendo a divisão exata (mesma troca já aceita lá).
 - **Excluir**: `GastosPage.handleDeleteExpense()` abre o `ConfirmDeleteRecurringModal` (já genérico, sem mudança nele) quando `recurringGroupId` OU `installmentGroupId` não é nulo.
 - **Badge**: `GastosPage.tsx` mostra uma `.pill` "Parcela X/Y" ao lado da descrição (mesmo lugar/estilo de "Recorrente" e "Dividido com {nome}"), usando `installmentNumber`/`installmentTotal` da API - mesmo padrão já usado em `DevedorDetailPage.tsx` pra dívida parcelada.
+
+## Devedores: saldo por período (não por todos os tempos) + Devedores Geral agrupado por pessoa
+
+Dois pedidos do usuário na mesma sessão, resolvidos juntos porque são a mesma área de tela:
+
+- **Bug real**: tanto a listagem "Pessoas" dentro de uma aba (`DevedoresPage.tsx`) quanto o cabeçalho "Saldo devedor" de `DevedorDetailPage.tsx` mostravam o total de TODAS as dívidas não-quitadas da pessoa, **de qualquer período** - mesmo já existindo um `PeriodNavigator` visível na tela, sugerindo (errado) que o número mudava com o período selecionado. Corrigido sem tocar em nenhum DTO do backend, só trocando a fonte de dado no frontend: `DevedoresPage.tsx` não busca mais `GET /tabs/{tabId}/debtors` (não period-aware) pra montar a lista - usa `dashboard.porPessoa`, que já vinha period-aware de `GET /tabs/{tabId}/dashboard/devedores` mas não estava sendo usado pra essa lista especificamente. `DevedorDetailPage.tsx` troca `debtor.totalDevido` (API, todas as dívidas) por `totalAbertoNoPeriodo` (já calculado localmente ali mesmo, a partir da lista `debtor.debts` que já vem filtrada por período).
+- **`DevedoresGeralPage.tsx` (rota `/devedores`) redesenhada**: pedido do usuário pra conseguir ver quanto uma pessoa deve **por banco** (ex: "quanto o Thiago deve no BTG" separado de "quanto ele deve no Itaú"), já que cada aba tem seu próprio registro de `Debtor` pra "a mesma pessoa real" (não existe um Devedor compartilhado entre abas). A tela já buscava os devedores de todas as abas sem fundir por nome (uma linha por aba) - o que faltava era agrupar visualmente. Agora agrupa por `nome` no próprio frontend (`useMemo`, sem mudança de formato na API) e mostra:
+  - **Pessoa que só deve numa aba**: linha direta, clicável, sem nenhum disclosure - vai direto pro detalhe daquela dívida (mesmo comportamento de antes).
+  - **Pessoa que deve em 2+ abas**: linha de grupo com o total **somado**, que expande (mesmo padrão accordion de "Agrupamento de casas" do Bets - `expanded: Set<string>`, chevron que gira) revelando uma sub-linha por aba (nome da aba + bolinha de cor + valor daquela aba especificamente), cada uma clicável pro detalhe correspondente.
+  - **Navegação por período + "ver total"** (ver próxima seção) - a tela ganhou o mesmo `PeriodNavigator` que as outras telas de Devedores já tinham, por padrão mostrando só o período atual (mesmo critério de "mês atual" da Visão Geral - `FiscalPeriodCalculator.getCurrentFiscalPeriod(1)` como referência comum entre abas).
+
+## "Ver total" (Visão Geral e Devedores Geral)
+
+Pedido explícito do usuário: além de navegar mês a mês, poder ver a soma de **todos os meses de uma vez** - "todos os meus gastos totais, e todos os devedores totais, todos os meses." Tanto `OverviewPage.tsx` (`/visao-geral`) quanto `DevedoresGeralPage.tsx` (`/devedores`) ganharam o mesmo toggle de 2 botões (`Por período` / `Ver total`, mesmo estilo visual dos toggles Saque/Depósito do Bets) logo acima do `PeriodNavigator` - marcando "Ver total", o `PeriodNavigator` some (não faz sentido navegar período nesse modo) e vira só um texto explicativo ("Soma de tudo, todos os meses."). Manda `total=true` na query (`GET /dashboard/visao-geral`/`GET /dashboard/devedores-geral`) - o backend responde com os mesmos formatos de sempre, só que com os números somados sem filtro de data nenhum (ver `financeiro-api/CLAUDE.md`). Os tipos `VisaoGeralResponse.periodKey`/`DevedoresGeralResponse.periodKey` agora são `string | null` (`null` quando `total=true`, já que não existe uma "chave de período" fazendo sentido nesse modo) - todo `PeriodNavigator` que os usa precisa do fallback `?? ""` por causa disso.
 
 ## Orçamento por categoria
 

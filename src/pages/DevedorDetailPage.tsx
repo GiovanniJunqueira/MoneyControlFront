@@ -138,8 +138,8 @@ export function DevedorDetailPage() {
       </div>
 
       <div className="card mb-4">
-        <p className="text-sm text-ink-soft">Saldo devedor (todas as dívidas, qualquer período)</p>
-        <p className="num mt-1 text-2xl text-danger">{formatCurrency(debtor.totalDevido)}</p>
+        <p className="text-sm text-ink-soft">Saldo devedor no período</p>
+        <p className="num mt-1 text-2xl text-danger">{formatCurrency(totalAbertoNoPeriodo)}</p>
       </div>
 
       <PeriodNavigator period={debtor.period} onNavigate={setPeriodKey} />

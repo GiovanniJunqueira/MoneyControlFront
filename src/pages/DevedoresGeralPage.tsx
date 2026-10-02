@@ -1,27 +1,60 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
-import { DevedorGeral } from "../api/types";
-import { ArrowLeftIcon } from "../components/icons";
+import { DevedorGeral, DevedoresGeralResponse } from "../api/types";
+import { PeriodNavigator } from "../components/PeriodNavigator";
+import { ArrowLeftIcon, ChevronRightIcon } from "../components/icons";
 import { formatCurrency } from "../utils/format";
+
+interface PessoaGroup {
+  nome: string;
+  totalDevido: number;
+  porAba: DevedorGeral[];
+}
 
 export function DevedoresGeralPage() {
   const navigate = useNavigate();
-  const [devedores, setDevedores] = useState<DevedorGeral[]>([]);
+  const [periodKey, setPeriodKey] = useState<string | undefined>(undefined);
+  const [total, setTotal] = useState(false);
+  const [data, setData] = useState<DevedoresGeralResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await api.get<DevedorGeral[]>("/dashboard/devedores-geral");
-    setDevedores(res.data);
+    const res = await api.get<DevedoresGeralResponse>("/dashboard/devedores-geral", {
+      params: { ...(periodKey ? { period: periodKey } : {}), total: total || undefined },
+    });
+    setData(res.data);
     setLoading(false);
-  }, []);
+  }, [periodKey, total]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const total = devedores.reduce((sum, d) => sum + d.totalDevido, 0);
+  const grupos = useMemo<PessoaGroup[]>(() => {
+    if (!data) return [];
+    const porNome = new Map<string, PessoaGroup>();
+    for (const d of data.devedores) {
+      const g = porNome.get(d.nome) ?? { nome: d.nome, totalDevido: 0, porAba: [] };
+      g.totalDevido += d.totalDevido;
+      g.porAba.push(d);
+      porNome.set(d.nome, g);
+    }
+    return Array.from(porNome.values()).sort((a, b) => b.totalDevido - a.totalDevido);
+  }, [data]);
+
+  const totalGeral = grupos.reduce((sum, g) => sum + g.totalDevido, 0);
+
+  function toggleExpanded(nome: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(nome)) next.delete(nome);
+      else next.add(nome);
+      return next;
+    });
+  }
 
   return (
     <div>
@@ -34,35 +67,93 @@ export function DevedoresGeralPage() {
         <p className="mt-1 text-ink-soft">Quem te deve, em todas as abas.</p>
       </div>
 
+      <div className="mb-4 grid grid-cols-2 gap-2">
+        <button
+          onClick={() => setTotal(false)}
+          className={`rounded-2xl border-2 px-3 py-2 text-[13px] font-medium transition-colors ${
+            !total ? "border-accent bg-accent-soft text-accent" : "border-line text-ink-soft"
+          }`}
+        >
+          Por período
+        </button>
+        <button
+          onClick={() => setTotal(true)}
+          className={`rounded-2xl border-2 px-3 py-2 text-[13px] font-medium transition-colors ${
+            total ? "border-accent bg-accent-soft text-accent" : "border-line text-ink-soft"
+          }`}
+        >
+          Ver total
+        </button>
+      </div>
+
+      {total ? (
+        <p className="mb-6 text-sm text-ink-soft">Soma de tudo, todos os meses.</p>
+      ) : (
+        data && <PeriodNavigator period={{ key: data.periodKey ?? "" }} onNavigate={setPeriodKey} />
+      )}
+
       <div className="card mb-4">
         <p className="text-sm text-ink-soft">Total pendente</p>
-        <p className="num mt-1 text-2xl text-danger">{formatCurrency(total)}</p>
+        <p className="num mt-1 text-2xl text-danger">{formatCurrency(totalGeral)}</p>
       </div>
 
       <div className="card">
         {loading ? (
           <p className="py-2 text-sm text-ink-soft">Carregando…</p>
-        ) : devedores.length === 0 ? (
-          <p className="py-6 text-sm text-ink-soft">Ninguém te deve nada em nenhuma aba, por enquanto.</p>
+        ) : grupos.length === 0 ? (
+          <p className="py-6 text-sm text-ink-soft">
+            {total ? "Ninguém te deve nada em nenhuma aba." : "Ninguém te deve nada nesse período."}
+          </p>
         ) : (
           <ul className="divide-y divide-line/70">
-            {devedores.map((d) => (
-              <li key={`${d.tabId}-${d.debtorId}`}>
-                <button
-                  onClick={() => navigate(`/tabs/${d.tabId}/devedores/${d.debtorId}`)}
-                  className="list-row -mx-1 w-[calc(100%+0.5rem)] rounded-2xl px-1 text-left transition-colors hover:bg-surface-soft active:bg-surface-soft"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-[15px] font-medium text-ink">{d.nome}</p>
-                    <p className="flex items-center gap-1.5 text-xs text-ink-soft">
-                      <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: d.tabColor || "#8E8E93" }} />
-                      {d.tabName} · {d.quantidadeDividas} {d.quantidadeDividas === 1 ? "dívida" : "dívidas"}
-                    </p>
-                  </div>
-                  <span className="num shrink-0 text-[15px] text-danger">{formatCurrency(d.totalDevido)}</span>
-                </button>
-              </li>
-            ))}
+            {grupos.map((g) => {
+              const unica = g.porAba.length === 1;
+              const isExpanded = expanded.has(g.nome);
+              return (
+                <li key={g.nome}>
+                  <button
+                    onClick={() =>
+                      unica ? navigate(`/tabs/${g.porAba[0].tabId}/devedores/${g.porAba[0].debtorId}`) : toggleExpanded(g.nome)
+                    }
+                    aria-expanded={unica ? undefined : isExpanded}
+                    className="list-row -mx-1 w-[calc(100%+0.5rem)] rounded-2xl px-1 text-left transition-colors hover:bg-surface-soft active:bg-surface-soft"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-[15px] font-medium text-ink">{g.nome}</p>
+                      <p className="text-xs text-ink-soft">
+                        {unica ? g.porAba[0].tabName : `${g.porAba.length} abas`}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <span className="num text-[15px] text-danger">{formatCurrency(g.totalDevido)}</span>
+                      <ChevronRightIcon
+                        className={`h-4 w-4 text-ink-soft transition-transform ${!unica && isExpanded ? "rotate-90" : ""}`}
+                      />
+                    </div>
+                  </button>
+                  {!unica && isExpanded && (
+                    <ul className="mb-2 ml-2 space-y-1 rounded-2xl bg-surface-soft p-2">
+                      {g.porAba.map((d) => (
+                        <li key={d.tabId}>
+                          <button
+                            onClick={() => navigate(`/tabs/${d.tabId}/devedores/${d.debtorId}`)}
+                            className="list-row w-full rounded-xl px-2 py-2 text-left transition-colors hover:bg-surface"
+                          >
+                            <div className="flex min-w-0 items-center gap-1.5">
+                              <span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: d.tabColor || "#8E8E93" }} />
+                              <span className="truncate text-sm text-ink">
+                                {d.tabName} · {d.quantidadeDividas} {d.quantidadeDividas === 1 ? "dívida" : "dívidas"}
+                              </span>
+                            </div>
+                            <span className="num shrink-0 text-sm text-danger">{formatCurrency(d.totalDevido)}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

@@ -135,7 +135,8 @@ export interface DevedoresResumoDto {
 }
 
 export interface VisaoGeralResponse {
-  periodKey: string;
+  periodKey: string | null;
+  total: boolean;
   abas: TabSummary[];
   resumoGastos: {
     total: number;
@@ -161,6 +162,12 @@ export interface DevedorGeral {
   tabId: string;
   tabName: string;
   tabColor: string | null;
+}
+
+export interface DevedoresGeralResponse {
+  periodKey: string | null;
+  total: boolean;
+  devedores: DevedorGeral[];
 }
 
 export interface BetHouse {

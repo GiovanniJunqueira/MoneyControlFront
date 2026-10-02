@@ -45,7 +45,7 @@ export function HomePage() {
     <div className="pt-2">
       <p className="mb-4 text-center text-ink-soft">Escolha uma aba ou veja a visão geral.</p>
 
-      <PeriodNavigator period={{ key: data.periodKey }} onNavigate={setPeriodKey} />
+      <PeriodNavigator period={{ key: data.periodKey ?? "" }} onNavigate={setPeriodKey} />
 
       <DonutTabChart
         abas={data.abas}
