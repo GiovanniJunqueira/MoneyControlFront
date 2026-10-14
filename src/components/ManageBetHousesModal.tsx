@@ -4,7 +4,7 @@ import { api, extractErrorMessage } from "../api/client";
 import { BetHouse, BetHouseGroup } from "../api/types";
 import { SUGGESTED_COLORS } from "../utils/colors";
 import { formatDateLong } from "../utils/format";
-import { GripIcon, PencilIcon, XIcon } from "./icons";
+import { GripIcon, PencilIcon } from "./icons";
 
 interface Props {
   onClose: () => void;
@@ -29,8 +29,8 @@ export function ManageBetHousesModal({ onClose, onChanged }: Props) {
   const rowRefs = useRef<Map<string, HTMLLIElement>>(new Map());
   const dragId = useRef<string | null>(null);
 
-  const activeHouses = houses?.filter((h) => !h.archivedFrom) ?? null;
-  const archivedHouses = houses?.filter((h) => h.archivedFrom) ?? [];
+  const activeHouses = houses?.filter((h) => !h.disabledFrom) ?? null;
+  const disabledHouses = houses?.filter((h) => h.disabledFrom) ?? [];
 
   function reload() {
     api.get<BetHouse[]>("/bets/houses").then((res) => setHouses(res.data));
@@ -77,25 +77,25 @@ export function ManageBetHousesModal({ onClose, onChanged }: Props) {
     }
   }
 
-  async function handleArchive(id: string) {
+  async function handleDisable(id: string) {
     setError(null);
     try {
-      await api.delete(`/bets/houses/${id}`);
+      await api.put(`/bets/houses/${id}/disable`);
       reload();
       onChanged();
     } catch (err) {
-      setError(extractErrorMessage(err, "Não foi possível excluir essa casa."));
+      setError(extractErrorMessage(err, "Não foi possível desabilitar essa casa."));
     }
   }
 
-  async function handleRestore(id: string) {
+  async function handleEnable(id: string) {
     setError(null);
     try {
-      await api.put(`/bets/houses/${id}/restore`);
+      await api.put(`/bets/houses/${id}/enable`);
       reload();
       onChanged();
     } catch (err) {
-      setError(extractErrorMessage(err, "Não foi possível restaurar essa casa."));
+      setError(extractErrorMessage(err, "Não foi possível habilitar essa casa."));
     }
   }
 
@@ -126,8 +126,8 @@ export function ManageBetHousesModal({ onClose, onChanged }: Props) {
         reordered.splice(i, 0, moved);
         setHouses((prev) => {
           if (!prev) return prev;
-          const archived = prev.filter((h) => h.archivedFrom);
-          return [...reordered, ...archived];
+          const disabled = prev.filter((h) => h.disabledFrom);
+          return [...reordered, ...disabled];
         });
         break;
       }
@@ -239,11 +239,11 @@ export function ManageBetHousesModal({ onClose, onChanged }: Props) {
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() => handleArchive(house.id)}
-                        className="icon-btn text-danger"
-                        aria-label={`Excluir ${house.name}`}
+                        onClick={() => handleDisable(house.id)}
+                        className="btn-secondary px-3 py-1.5 text-xs"
+                        aria-label={`Desabilitar ${house.name}`}
                       >
-                        <XIcon className="h-4 w-4" />
+                        Desabilitar
                       </button>
                     </div>
                   </div>
@@ -252,23 +252,24 @@ export function ManageBetHousesModal({ onClose, onChanged }: Props) {
             ))}
           </ul>
 
-          {archivedHouses.length > 0 && (
+          {disabledHouses.length > 0 && (
             <div className="mt-5">
               <p className="mb-2 text-xs text-ink-soft">
-                Arquivadas — somem da lista atual, mas o histórico continua intacto.
+                Desabilitadas — não aparecem nos resultados a partir da data indicada. O histórico anterior
+                continua intacto, e se você habilitar de novo, o período em que ficou desabilitada continua escondido.
               </p>
               <ul className="max-h-[30vh] divide-y divide-line/70 overflow-y-auto opacity-60">
-                {archivedHouses.map((house) => (
+                {disabledHouses.map((house) => (
                   <li key={house.id} className="flex items-center justify-between gap-2 py-3">
                     <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-ink">
                       <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: house.color || "#8E8E93" }} />
                       <span className="min-w-0">
                         <span className="block truncate">{house.name}</span>
-                        <span className="block text-xs text-ink-soft">desde {formatDateLong(house.archivedFrom!)}</span>
+                        <span className="block text-xs text-ink-soft">desde {formatDateLong(house.disabledFrom!)}</span>
                       </span>
                     </span>
-                    <button onClick={() => handleRestore(house.id)} className="btn-secondary shrink-0 px-3 py-1.5 text-xs">
-                      Restaurar
+                    <button onClick={() => handleEnable(house.id)} className="btn-secondary shrink-0 px-3 py-1.5 text-xs">
+                      Habilitar
                     </button>
                   </li>
                 ))}

@@ -177,7 +177,7 @@ export interface BetHouse {
   position: number;
   groupId: string | null;
   groupName: string | null;
-  archivedFrom: string | null;
+  disabledFrom: string | null;
 }
 
 export interface BetHouseGroup {
