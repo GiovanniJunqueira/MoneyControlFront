@@ -367,6 +367,28 @@ export interface FinancingsOverview {
   financings: FinancingCard[];
 }
 
+/** Parte de uma pessoa num pagamento. Lista vazia = pago "tudo junto", sem divisão. */
+export interface FinancingPayer {
+  userId: string;
+  name: string;
+  amount: number;
+}
+
+/** Envio: exatamente um entre amount (R$) e percent (%) por pessoa, todos do mesmo tipo. */
+export interface FinancingPayerInput {
+  userId: string;
+  amount?: number;
+  percent?: number;
+}
+
+export interface FinancingHistoryEntry {
+  type: "COST" | "PAYMENT" | "AMORTIZATION";
+  label: string;
+  date: string;
+  amount: number;
+  payers: FinancingPayer[];
+}
+
 export interface FinancingCost {
   id: string;
   kind: FinancingCostKind;
@@ -374,7 +396,7 @@ export interface FinancingCost {
   amount: number;
   dueDate: string | null;
   paidDate: string | null;
-  paidByName: string | null;
+  payers: FinancingPayer[];
   groupId: string | null;
   itemNumber: number | null;
   itemTotal: number | null;
@@ -395,7 +417,7 @@ export interface FinancingScheduleRow {
   status: InstallmentStatus;
   paidDate: string | null;
   paidAmount: number | null;
-  paidByName: string | null;
+  payers: FinancingPayer[];
 }
 
 export interface FinancingAmortization {
@@ -404,7 +426,7 @@ export interface FinancingAmortization {
   amount: number;
   mode: AmortizationMode;
   paidDate: string;
-  paidByName: string | null;
+  payers: FinancingPayer[];
 }
 
 export interface FinancingMember {
@@ -457,6 +479,8 @@ export interface FinancingDetail {
   schedule: FinancingScheduleRow[];
   amortizations: FinancingAmortization[];
   members: FinancingMember[];
+  jointPaid: number;
+  history: FinancingHistoryEntry[];
 }
 
 export interface FinancingCostInput {
@@ -468,6 +492,7 @@ export interface FinancingCostInput {
   paidDate?: string;
   installments?: number;
   paidInstallments?: number;
+  payers?: FinancingPayerInput[];
 }
 
 export interface FinancingScenario {

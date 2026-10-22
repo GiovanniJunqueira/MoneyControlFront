@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { FinancingKind, FinancingsOverview } from "../api/types";
 import { FinancingFormModal } from "../components/FinancingFormModal";
+import { JoinFinancingModal } from "../components/JoinFinancingModal";
 import { BankIcon, ChevronRightIcon, PlusIcon } from "../components/icons";
 import { formatCurrency, formatDate } from "../utils/format";
 
@@ -12,6 +13,7 @@ export function FinancingsPage() {
   const navigate = useNavigate();
   const [overview, setOverview] = useState<FinancingsOverview | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [showJoin, setShowJoin] = useState(false);
 
   const load = useCallback(async () => {
     const res = await api.get<FinancingsOverview>("/financings");
@@ -79,10 +81,19 @@ export function FinancingsPage() {
         </div>
       )}
 
-      <button onClick={() => setShowCreate(true)} className="btn-primary mt-4 w-full gap-1.5">
-        <PlusIcon className="h-4 w-4" /> Novo financiamento
-      </button>
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <button onClick={() => setShowJoin(true)} className="btn-secondary flex-1">Entrar com código</button>
+        <button onClick={() => setShowCreate(true)} className="btn-primary flex-1 gap-1.5">
+          <PlusIcon className="h-4 w-4" /> Novo financiamento
+        </button>
+      </div>
 
+      {showJoin && (
+        <JoinFinancingModal
+          onClose={() => setShowJoin(false)}
+          onJoined={(detail) => { setShowJoin(false); navigate(`/financiamentos/${detail.id}`); }}
+        />
+      )}
       {showCreate && (
         <FinancingFormModal
           onClose={() => setShowCreate(false)}

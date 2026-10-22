@@ -1,13 +1,15 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Modal } from "./Modal";
 import { api, extractErrorMessage } from "../api/client";
-import { AmortizationMode, FinancingDetail, FinancingScenario, FinancingSimulation } from "../api/types";
+import { AmortizationMode, FinancingDetail, FinancingMember, FinancingScenario, FinancingSimulation } from "../api/types";
+import { PayerSplit, buildPayers, emptyPayerDraft } from "./PayerSplit";
 import { formatCurrency, formatMonthYear } from "../utils/format";
 
 interface Props {
   financingId: string;
   /** Saldo devedor de hoje - teto do valor e atalho do "Quitar tudo". */
   balance: number;
+  members: FinancingMember[];
   onClose: () => void;
   onSaved: (detail: FinancingDetail) => void;
 }
@@ -34,12 +36,13 @@ function savedLine(s: FinancingScenario) {
 }
 
 /** Simula (sem gravar) as duas formas de amortizar - reduzir prazo ou reduzir parcela - e só grava quando confirmar. */
-export function AmortizationModal({ financingId, balance, onClose, onSaved }: Props) {
+export function AmortizationModal({ financingId, balance, members, onClose, onSaved }: Props) {
   const [amount, setAmount] = useState("");
   const [mode, setMode] = useState<AmortizationMode>("TERM");
   const [simulation, setSimulation] = useState<FinancingSimulation | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [payerDraft, setPayerDraft] = useState(emptyPayerDraft());
   const requestId = useRef(0);
 
   const amountValue = Number(amount);
@@ -71,10 +74,15 @@ export function AmortizationModal({ financingId, balance, onClose, onSaved }: Pr
   }, [amountValue, financingId]);
 
   async function confirm() {
+    const built = buildPayers(payerDraft, members, "AMOUNT", amountValue);
+    if (built.error) {
+      setError(built.error);
+      return;
+    }
     setSaving(true);
     setError(null);
     try {
-      const res = await api.post<FinancingDetail>(`/financings/${financingId}/amortizations`, { amount: amountValue, mode });
+      const res = await api.post<FinancingDetail>(`/financings/${financingId}/amortizations`, { amount: amountValue, mode, payers: built.payers });
       onSaved(res.data);
     } catch (err) {
       setError(extractErrorMessage(err));
@@ -132,6 +140,8 @@ export function AmortizationModal({ financingId, balance, onClose, onSaved }: Pr
             </ScenarioCard>
           </div>
         )}
+
+        {sim && <PayerSplit members={members} draft={payerDraft} onChange={setPayerDraft} mode="AMOUNT" total={amountValue} />}
 
         {error && <p className="text-sm text-danger">{error}</p>}
 

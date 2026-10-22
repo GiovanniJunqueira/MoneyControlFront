@@ -2,9 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, extractErrorMessage } from "../api/client";
 import {
+  FinancingAmortization,
   FinancingCost,
   FinancingCostKind,
   FinancingDetail,
+  FinancingPayer,
+  FinancingPayerInput,
   FinancingScheduleRow,
   InstallmentStatus,
 } from "../api/types";
@@ -13,6 +16,8 @@ import { EditFinancingCostModal } from "../components/EditFinancingCostModal";
 import { FinancingCostModal } from "../components/FinancingCostModal";
 import { FinancingFormModal } from "../components/FinancingFormModal";
 import { FinancingPaymentModal } from "../components/FinancingPaymentModal";
+import { FinancingSharePanel } from "../components/FinancingSharePanel";
+import { PayersModal } from "../components/PayersModal";
 import { ArrowLeftIcon, CheckIcon, ChevronRightIcon, PencilIcon, PlusIcon, TrashIcon } from "../components/icons";
 import { formatCurrency, formatDate, formatDateLong, formatMonthYear, formatPercent } from "../utils/format";
 
@@ -21,6 +26,20 @@ const STATUS_PILL: Record<InstallmentStatus, { label: string; className: string 
   OVERDUE: { label: "Atrasada", className: "bg-danger-soft text-danger" },
   OPEN: null,
 };
+
+/** O que está sendo pago/ajustado no modal "Quem pagou". */
+type PayersTarget =
+  | { kind: "cost-pay"; cost: FinancingCost }
+  | { kind: "cost-edit"; cost: FinancingCost }
+  | { kind: "row-pay"; row: FinancingScheduleRow }
+  | { kind: "row-edit"; row: FinancingScheduleRow }
+  | { kind: "amort-edit"; amort: FinancingAmortization };
+
+/** " · Ana R$ 1.200 · Bruno R$ 800" / " · tudo junto" (só quando há 2+ pessoas) / "" */
+function payersSuffix(payers: FinancingPayer[], shared: boolean): string {
+  if (payers.length > 0) return " · " + payers.map((p) => `${p.name} ${formatCurrency(p.amount)}`).join(" · ");
+  return shared ? " · tudo junto" : "";
+}
 
 function Stat({ label, value, tone }: { label: string; value: string; tone?: "success" | "danger" }) {
   return (
@@ -43,6 +62,7 @@ export function FinancingDetailPage() {
   const [showPayments, setShowPayments] = useState(false);
   const [showAmort, setShowAmort] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
+  const [payersTarget, setPayersTarget] = useState<PayersTarget | null>(null);
   const initialized = useRef(false);
 
   const apply = useCallback((detail: FinancingDetail) => {
@@ -89,6 +109,16 @@ export function FinancingDetailPage() {
       return;
     }
     if (window.confirm(`Excluir "${c.description}"?`)) remove(false);
+  }
+
+  async function handleLeave() {
+    if (!f || !window.confirm("Sair desse financiamento? Ele continua existindo pra quem ficou, e o histórico do que você pagou é mantido.")) return;
+    try {
+      await api.post(`/financings/${f.id}/leave`);
+      navigate("/financiamentos", { replace: true });
+    } catch (err) {
+      setError(extractErrorMessage(err, "Não foi possível sair."));
+    }
   }
 
   async function handleDelete() {
@@ -154,7 +184,13 @@ export function FinancingDetailPage() {
               return (
                 <li key={c.id} className="flex items-center gap-2.5 py-2.5">
                   <button
-                    onClick={() => run(() => api.put(`/financings/${f!.id}/costs/${c.id}/pay`, { paid: !isPaid }))}
+                    onClick={() => {
+                      if (isPaid || f!.members.length < 2) {
+                        run(() => api.put(`/financings/${f!.id}/costs/${c.id}/pay`, { paid: !isPaid }));
+                      } else {
+                        setPayersTarget({ kind: "cost-pay", cost: c });
+                      }
+                    }}
                     aria-label={isPaid ? "Desmarcar como pago" : "Marcar como pago"}
                     className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
                       isPaid ? "border-success bg-success text-white" : "border-line text-transparent"
@@ -168,8 +204,13 @@ export function FinancingDetailPage() {
                       {c.itemTotal && <span className="pill ml-1.5 bg-accent-soft text-accent">{c.itemNumber}/{c.itemTotal}</span>}
                     </p>
                     <p className="text-xs text-ink-soft">
-                      {isPaid ? `Pago em ${formatDate(c.paidDate!)}${c.paidByName ? ` por ${c.paidByName}` : ""}` : c.dueDate ? `Vence ${formatDate(c.dueDate)}` : "Sem vencimento"}
+                      {isPaid ? `Pago em ${formatDate(c.paidDate!)}${payersSuffix(c.payers, f!.members.length > 1)}` : c.dueDate ? `Vence ${formatDate(c.dueDate)}` : "Sem vencimento"}
                     </p>
+                    {isPaid && f!.members.length > 1 && (
+                      <button onClick={() => setPayersTarget({ kind: "cost-edit", cost: c })} className="text-xs font-medium text-accent">
+                        Quem pagou
+                      </button>
+                    )}
                   </div>
                   <span className="num shrink-0 text-[15px] text-ink">{formatCurrency(c.amount)}</span>
                   <button onClick={() => setEditingCost(c)} className="icon-btn h-8 w-8" aria-label={`Editar ${c.description}`}>
@@ -191,6 +232,75 @@ export function FinancingDetailPage() {
           <PlusIcon className="h-3.5 w-3.5" /> {kind === "ENTRADA" ? "Adicionar pagamento de entrada" : "Adicionar taxa"}
         </button>
       </div>
+    );
+  }
+
+  function renderPayersModal(target: PayersTarget) {
+    const close = () => setPayersTarget(null);
+    const done = (detail: FinancingDetail) => { close(); apply(detail); };
+    const payload = (payers: FinancingPayerInput[] | undefined) => ({ payers: payers ?? [] });
+    const members = f!.members;
+
+    if (target.kind === "cost-pay" || target.kind === "cost-edit") {
+      const cost = target.cost;
+      const editing = target.kind === "cost-edit";
+      return (
+        <PayersModal
+          title={editing ? "Quem pagou" : "Quem pagou?"}
+          subtitle={`${cost.description} · ${formatCurrency(cost.amount)}`}
+          members={members}
+          total={cost.amount}
+          mode="AMOUNT"
+          initial={editing ? cost.payers : []}
+          confirmLabel={editing ? "Salvar" : "Marcar como pago"}
+          onClose={close}
+          onConfirm={async (payers) => {
+            const res = editing
+              ? await api.put<FinancingDetail>(`/financings/${f!.id}/costs/${cost.id}/payers`, payload(payers))
+              : await api.put<FinancingDetail>(`/financings/${f!.id}/costs/${cost.id}/pay`, { paid: true, payers });
+            done(res.data);
+          }}
+        />
+      );
+    }
+    if (target.kind === "row-pay" || target.kind === "row-edit") {
+      const row = target.row;
+      const editing = target.kind === "row-edit";
+      return (
+        <PayersModal
+          title={editing ? "Quem pagou" : "Quem pagou?"}
+          subtitle={`Parcela ${row.number} · ${formatCurrency(row.paidAmount ?? row.payment)}`}
+          members={members}
+          total={row.paidAmount ?? row.payment}
+          mode="AMOUNT"
+          initial={editing ? row.payers : []}
+          confirmLabel={editing ? "Salvar" : "Marcar como paga"}
+          onClose={close}
+          onConfirm={async (payers) => {
+            const res = editing
+              ? await api.put<FinancingDetail>(`/financings/${f!.id}/payments/${row.number}/payers`, payload(payers))
+              : await api.post<FinancingDetail>(`/financings/${f!.id}/payments`, { fromInstallment: row.number, toInstallment: row.number, payers });
+            done(res.data);
+          }}
+        />
+      );
+    }
+    const amort = target.amort;
+    return (
+      <PayersModal
+        title="Quem pagou"
+        subtitle={`Amortização · ${formatCurrency(amort.amount)}`}
+        members={members}
+        total={amort.amount}
+        mode="AMOUNT"
+        initial={amort.payers}
+        confirmLabel="Salvar"
+        onClose={close}
+        onConfirm={async (payers) => {
+          const res = await api.put<FinancingDetail>(`/financings/${f!.id}/amortizations/${amort.id}/payers`, payload(payers));
+          done(res.data);
+        }}
+      />
     );
   }
 
@@ -311,19 +421,32 @@ export function FinancingDetailPage() {
                                 {r.correction > 0 && <Stat label="Correção do saldo" value={formatCurrency(r.correction)} />}
                                 <Stat label="Saldo depois" value={formatCurrency(r.closingBalance)} />
                                 {r.status === "PAID" && r.paidDate && (
-                                  <Stat label="Paga em" value={`${formatDate(r.paidDate)}${r.paidByName ? ` · ${r.paidByName}` : ""}`} />
+                                  <Stat label="Paga em" value={`${formatDate(r.paidDate)}${payersSuffix(r.payers, f.members.length > 1)}`} />
                                 )}
                               </div>
                               {r.status === "PAID" ? (
-                                <button
-                                  onClick={() => run(() => api.delete(`/financings/${f.id}/payments/${r.number}`))}
-                                  className="text-sm font-medium text-danger"
-                                >
-                                  Desfazer pagamento
-                                </button>
+                                <div className="flex items-center gap-4">
+                                  {f.members.length > 1 && (
+                                    <button onClick={() => setPayersTarget({ kind: "row-edit", row: r })} className="text-sm font-medium text-accent">
+                                      Quem pagou
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => run(() => api.delete(`/financings/${f.id}/payments/${r.number}`))}
+                                    className="text-sm font-medium text-danger"
+                                  >
+                                    Desfazer pagamento
+                                  </button>
+                                </div>
                               ) : (
                                 <button
-                                  onClick={() => run(() => api.post(`/financings/${f.id}/payments`, { fromInstallment: r.number, toInstallment: r.number }))}
+                                  onClick={() => {
+                                    if (f.members.length > 1) {
+                                      setPayersTarget({ kind: "row-pay", row: r });
+                                    } else {
+                                      run(() => api.post(`/financings/${f.id}/payments`, { fromInstallment: r.number, toInstallment: r.number }));
+                                    }
+                                  }}
                                   className="btn-primary w-full py-2 text-sm"
                                 >
                                   Marcar como paga
@@ -360,8 +483,13 @@ export function FinancingDetailPage() {
                   <p className="num text-[15px] font-medium text-ink">{formatCurrency(a.amount)}</p>
                   <p className="text-xs text-ink-soft">
                     {a.mode === "TERM" ? "Reduziu o prazo" : "Reduziu a parcela"} · após a parcela {a.afterInstallment} · {formatDate(a.paidDate)}
-                    {a.paidByName ? ` · ${a.paidByName}` : ""}
+                    {payersSuffix(a.payers, f.members.length > 1)}
                   </p>
+                  {f.members.length > 1 && (
+                    <button onClick={() => setPayersTarget({ kind: "amort-edit", amort: a })} className="text-xs font-medium text-accent">
+                      Quem pagou
+                    </button>
+                  )}
                 </div>
                 <button
                   onClick={() => window.confirm("Remover essa amortização? O cronograma volta a como era antes dela.") && run(() => api.delete(`/financings/${f.id}/amortizations/${a.id}`))}
@@ -380,6 +508,8 @@ export function FinancingDetailPage() {
           </p>
         )}
       </div>
+
+      <FinancingSharePanel financing={f} onLeave={f.members.length > 1 ? handleLeave : handleDelete} />
 
       {/* Contrato */}
       <div className="card mb-4">
@@ -400,6 +530,7 @@ export function FinancingDetailPage() {
         <FinancingCostModal
           financingId={f.id}
           kind={costModal}
+          members={f.members}
           onClose={() => setCostModal(null)}
           onSaved={(d) => { setCostModal(null); apply(d); }}
         />
@@ -417,6 +548,8 @@ export function FinancingDetailPage() {
           financingId={f.id}
           totalInstallments={t.totalInstallments}
           nextNumber={nextRow.number}
+          members={f.members}
+          schedule={f.schedule}
           onClose={() => setShowPayments(false)}
           onSaved={(d) => { setShowPayments(false); apply(d); }}
         />
@@ -425,10 +558,12 @@ export function FinancingDetailPage() {
         <AmortizationModal
           financingId={f.id}
           balance={t.outstandingBalance}
+          members={f.members}
           onClose={() => setShowAmort(false)}
           onSaved={(d) => { setShowAmort(false); apply(d); }}
         />
       )}
+      {payersTarget && renderPayersModal(payersTarget)}
       {showEdit && (
         <FinancingFormModal
           financing={f}

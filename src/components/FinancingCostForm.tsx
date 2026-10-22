@@ -1,17 +1,20 @@
 import { FormEvent, useState } from "react";
-import { FinancingCostInput, FinancingCostKind } from "../api/types";
+import { FinancingCostInput, FinancingCostKind, FinancingMember } from "../api/types";
+import { PayerSplit, buildPayers, emptyPayerDraft } from "./PayerSplit";
 import { formatCurrency, todayIso } from "../utils/format";
 
 interface Props {
   /** Se informado, trava o tipo (Entrada/Taxa) e esconde o seletor. */
   fixedKind?: FinancingCostKind;
   submitLabel: string;
+  /** Membros do financiamento - com 2+ pessoas, aparece a divisão opcional de quem pagou (nos itens já pagos). */
+  members?: FinancingMember[];
   onSubmit: (input: FinancingCostInput) => void | Promise<void>;
   onCancel?: () => void;
 }
 
 /** Formulário de um item de entrada ou taxa - usado dentro do assistente (monta uma lista local) e no detalhe (manda pra API). */
-export function FinancingCostForm({ fixedKind, submitLabel, onSubmit, onCancel }: Props) {
+export function FinancingCostForm({ fixedKind, submitLabel, members = [], onSubmit, onCancel }: Props) {
   const [kind, setKind] = useState<FinancingCostKind>(fixedKind ?? "ENTRADA");
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -20,6 +23,7 @@ export function FinancingCostForm({ fixedKind, submitLabel, onSubmit, onCancel }
   const [parcelar, setParcelar] = useState(false);
   const [installments, setInstallments] = useState("2");
   const [paidInstallments, setPaidInstallments] = useState("0");
+  const [payerDraft, setPayerDraft] = useState(emptyPayerDraft());
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -34,6 +38,9 @@ export function FinancingCostForm({ fixedKind, submitLabel, onSubmit, onCancel }
     if (!(amountValue > 0)) return setError("Informe um valor maior que zero.");
     if (parcelar && !(installmentsValue >= 2 && installmentsValue <= 120)) return setError("Parcelas: de 2 a 120.");
     const alreadyPaid = Math.max(0, Math.min(Number(paidInstallments) || 0, installmentsValue));
+    const hasPaidItems = parcelar ? alreadyPaid > 0 : paid;
+    const built = hasPaidItems ? buildPayers(payerDraft, members, parcelar ? "PERCENT" : "AMOUNT", amountValue) : {};
+    if (built.error) return setError(built.error);
     setError(null);
     setSaving(true);
     try {
@@ -46,6 +53,7 @@ export function FinancingCostForm({ fixedKind, submitLabel, onSubmit, onCancel }
         paidDate: !parcelar && paid ? (dueDate && dueDate <= todayIso() ? dueDate : todayIso()) : undefined,
         installments: parcelar ? installmentsValue : undefined,
         paidInstallments: parcelar ? alreadyPaid : undefined,
+        payers: built.payers,
       });
       setDescription("");
       setAmount("");
@@ -54,6 +62,7 @@ export function FinancingCostForm({ fixedKind, submitLabel, onSubmit, onCancel }
       setParcelar(false);
       setInstallments("2");
       setPaidInstallments("0");
+      setPayerDraft(emptyPayerDraft());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível salvar esse item.");
     } finally {
@@ -135,6 +144,10 @@ export function FinancingCostForm({ fixedKind, submitLabel, onSubmit, onCancel }
           <input type="checkbox" className="h-4 w-4 rounded" checked={paid} onChange={(e) => setPaid(e.target.checked)} />
           <span className="text-sm text-ink">Já paguei</span>
         </label>
+      )}
+
+      {(parcelar ? Number(paidInstallments) > 0 : paid) && (
+        <PayerSplit members={members} draft={payerDraft} onChange={setPayerDraft} mode={parcelar ? "PERCENT" : "AMOUNT"} total={amountValue > 0 ? amountValue : null} />
       )}
 
       {error && <p className="text-sm text-danger">{error}</p>}
