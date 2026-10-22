@@ -26,3 +26,15 @@ export function formatMonthName(periodKey: string): string {
   const label = new Date(year, month - 1, 1).toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
+
+/** Data de hoje no fuso do dispositivo (toISOString converteria pra UTC e viraria o dia cedo demais à noite). */
+export function todayIso(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** "2031-05-10" → "maio de 2031". */
+export function formatMonthYear(dateStr: string): string {
+  const d = new Date(dateStr.length === 10 ? `${dateStr}T00:00:00` : dateStr);
+  return d.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
+}

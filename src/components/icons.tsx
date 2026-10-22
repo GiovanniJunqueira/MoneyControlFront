@@ -194,3 +194,16 @@ export function ArrowsUpDownIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function BankIcon({ className }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M3 10 12 4l9 6" />
+      <path d="M3 20h18" />
+      <path d="M5 10v7" />
+      <path d="M9.5 10v7" />
+      <path d="M14.5 10v7" />
+      <path d="M19 10v7" />
+    </svg>
+  );
+}

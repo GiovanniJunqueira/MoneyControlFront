@@ -340,3 +340,153 @@ export interface InvestmentProjection {
   projectedYield: number;
   items: InvestmentProjectionItem[];
 }
+
+export type FinancingKind = "IMOVEL" | "VEICULO" | "OUTRO";
+export type FinancingSystem = "SAC" | "PRICE";
+export type RatePeriod = "MONTHLY" | "ANNUAL";
+export type FinancingCostKind = "ENTRADA" | "TAXA";
+export type AmortizationMode = "TERM" | "INSTALLMENT";
+
+export interface FinancingCard {
+  id: string;
+  name: string;
+  kind: FinancingKind;
+  assetValue: number;
+  financedAmount: number;
+  outstandingBalance: number;
+  paidInstallments: number;
+  totalInstallments: number;
+  progressPercent: number;
+  nextPayment: number | null;
+  nextDueDate: string | null;
+  memberCount: number;
+}
+
+export interface FinancingsOverview {
+  totalOutstanding: number;
+  financings: FinancingCard[];
+}
+
+export interface FinancingCost {
+  id: string;
+  kind: FinancingCostKind;
+  description: string;
+  amount: number;
+  dueDate: string | null;
+  paidDate: string | null;
+  paidByName: string | null;
+  groupId: string | null;
+  itemNumber: number | null;
+  itemTotal: number | null;
+}
+
+export type InstallmentStatus = "PAID" | "OPEN" | "OVERDUE";
+
+export interface FinancingScheduleRow {
+  number: number;
+  dueDate: string;
+  openingBalance: number;
+  correction: number;
+  interest: number;
+  amortization: number;
+  fees: number;
+  payment: number;
+  closingBalance: number;
+  status: InstallmentStatus;
+  paidDate: string | null;
+  paidAmount: number | null;
+  paidByName: string | null;
+}
+
+export interface FinancingAmortization {
+  id: string;
+  afterInstallment: number;
+  amount: number;
+  mode: AmortizationMode;
+  paidDate: string;
+  paidByName: string | null;
+}
+
+export interface FinancingMember {
+  userId: string;
+  name: string;
+  isYou: boolean;
+  contributed: number;
+}
+
+export interface FinancingTotals {
+  entradaTotal: number;
+  entradaPaid: number;
+  taxasTotal: number;
+  taxasPaid: number;
+  outstandingBalance: number;
+  paidInstallments: number;
+  totalInstallments: number;
+  originalInstallments: number;
+  paidInstallmentsAmount: number;
+  remainingPayments: number;
+  projectedInterest: number;
+  projectedFees: number;
+  amortizedTotal: number;
+  originalInterest: number;
+  interestSaved: number;
+  totalCost: number;
+  progressPercent: number;
+  nextPayment: number | null;
+  nextDueDate: string | null;
+  endDate: string | null;
+}
+
+export interface FinancingDetail {
+  id: string;
+  name: string;
+  kind: FinancingKind;
+  assetValue: number;
+  financedAmount: number;
+  interestRatePercent: number;
+  ratePeriod: RatePeriod;
+  monthlyRatePercent: number;
+  correctionMonthlyPercent: number;
+  termMonths: number;
+  system: FinancingSystem;
+  firstDueDate: string;
+  monthlyFees: number;
+  code: string;
+  totals: FinancingTotals;
+  costs: FinancingCost[];
+  schedule: FinancingScheduleRow[];
+  amortizations: FinancingAmortization[];
+  members: FinancingMember[];
+}
+
+export interface FinancingCostInput {
+  kind: FinancingCostKind;
+  description: string;
+  amount: number;
+  dueDate?: string;
+  paid: boolean;
+  paidDate?: string;
+  installments?: number;
+  paidInstallments?: number;
+}
+
+export interface FinancingScenario {
+  remainingInstallments: number;
+  nextPayment: number;
+  remainingInterest: number;
+  remainingTotal: number;
+  lastDueDate: string | null;
+  installmentsRemoved: number;
+  interestSaved: number;
+  paymentChange: number;
+}
+
+export interface FinancingSimulation {
+  afterInstallment: number;
+  balance: number;
+  amount: number;
+  fullPayoff: boolean;
+  before: FinancingScenario;
+  term: FinancingScenario;
+  installment: FinancingScenario;
+}

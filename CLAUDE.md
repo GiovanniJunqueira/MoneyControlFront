@@ -36,6 +36,8 @@ O conceito original era um "livro-caixa analógico" (papel, tinta, serifada Frau
 /                           -> HomePage (dentro de HomeLayout: topo simples, sem nav de Gastos/Devedores)
 /visao-geral                -> OverviewPage (idem, HomeLayout)
 /devedores                  -> DevedoresGeralPage (idem, HomeLayout) - devedores de TODAS as abas, agrupados por pessoa
+/financiamentos             -> FinancingsPage (idem, HomeLayout)
+/financiamentos/:id         -> FinancingDetailPage (idem)
 /tabs/:tabId/gastos         -> GastosPage (dentro de AppLayout: sidebar com Gastos/Devedores da aba)
 /tabs/:tabId/devedores      -> DevedoresPage
 /tabs/:tabId/devedores/:id  -> DevedorDetailPage
@@ -146,6 +148,14 @@ Ativado por `user.betsEnabled` (toggle no `SettingsModal.tsx`, ao lado do dark/l
 - **Projeção**: campo de "quantos meses" (input number) na própria `InvestmentsPage`, refaz `GET /investments/projection?months=N` toda vez que o campo muda (`useEffect` com debounce nenhum - a lista é pequena, não compensa a complexidade). Mostra o valor total projetado + o rendimento (verde/vermelho conforme o sinal), igual ao padrão visual do resto do app.
 - **Saque/depósito** (`InvestmentTransactionModal.tsx`, ícone novo `ArrowsUpDownIcon` por linha): mesmo padrão visual do `TransferModal.tsx` do Bets (toggle Saque/Depósito + valor), mas sem seletor de "conta de contrapartida" - aqui é só ajustar um valor só. `POST /investments/{id}/transaction`.
 - Cada linha da lista tem 3 ícones: saque/depósito, editar (`PencilIcon`), excluir (`TrashIcon` + `window.confirm`, mesmo padrão do `DELETE /bets/months/{id}`).
+
+## Módulo Financiamentos — lista global, na Home (ao lado de Investimentos)
+
+`FinancingsPage.tsx` (`/financiamentos`) lista os financiamentos (barra de progresso, parcelas pagas/total, próxima parcela) e `FinancingDetailPage.tsx` (`/financiamentos/:id`) é a tela completa. Entrada na `HomePage`: card "Financiamentos" (ícone novo `BankIcon`) com o saldo devedor somado - `HomePage.load()` busca `GET /financings` em paralelo (backend precisa estar no ar antes do frontend, ver `financeiro-api/CLAUDE.md`). Todo cálculo (cronograma, saldo, economia de juros) vem **pronto do backend** - o frontend só formata, não tem motor de cálculo próprio.
+
+- **Criar** (`FinancingFormModal.tsx`, assistente de 3 passos "O bem" → "Entrada e taxas" → "O financiamento"): o passo 2 reaproveita `FinancingCostForm` (formulário inline de item de entrada/taxa, com "Parcelado" + "Já pagas") montando uma lista **local** que vai junto no `POST /financings` (`costs`, mesma transação). O assistente **não é um `<form>`** de propósito: `FinancingCostForm` é um `<form>` e HTML não permite aninhar. Passo 3 mostra um aviso se `bem − financiado` não bate com a entrada lançada (só informativo). Taxa tem toggle "ao ano / ao mês" (default ao ano); correção/TR fica em "Opções avançadas". **Editar** o contrato usa o mesmo modal sem passos (bem + contrato empilhados, sem entrada/taxas - essas se editam no detalhe).
+- **Detalhe**, em cards: saldo devedor + progresso + próxima parcela; resumo (custo total, juros previstos, juros economizados); entrada e taxas (círculo pra marcar pago, editar, excluir - entrada parcelada pergunta "só essa" vs "todas"); **parcelas agrupadas por ano em accordion** (começa aberto o ano da próxima parcela; cada parcela expande pra mostrar juros/amortização/saldo e o botão marcar/desfazer; "Marcar várias como pagas" abre `FinancingPaymentModal` com intervalo de/até); amortização antecipada; contrato. Mutations devolvem o `FinancingDetail` completo e a página só faz `setF` - **exceção ao padrão "recarrega depois de mutar"** do resto do app, porque a resposta já traz tudo recalculado e evita uma segunda ida à API.
+- **`AmortizationModal.tsx`**: digitar o valor dispara `POST .../simulate` com debounce de 400ms (contador de requisição descarta resposta velha) e mostra os dois cenários lado a lado como cards selecionáveis - "Reduzir o prazo" (−N parcelas, termina em mês/ano, juros economizados) vs "Reduzir a parcela" (de R$X pra R$Y). "Quitar tudo" preenche o saldo devedor e vira um card único de quitação total. Só grava no "Amortizar".
 
 ## Cuidado com `toISOString()` pra pegar "a data de hoje"
 

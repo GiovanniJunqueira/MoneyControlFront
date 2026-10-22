@@ -13,6 +13,8 @@ import { HomePage } from "./pages/HomePage";
 import { OverviewPage } from "./pages/OverviewPage";
 import { DevedoresGeralPage } from "./pages/DevedoresGeralPage";
 import { InvestmentsPage } from "./pages/InvestmentsPage";
+import { FinancingsPage } from "./pages/FinancingsPage";
+import { FinancingDetailPage } from "./pages/FinancingDetailPage";
 import { GastosPage } from "./pages/GastosPage";
 import { DevedoresPage } from "./pages/DevedoresPage";
 import { DevedorDetailPage } from "./pages/DevedorDetailPage";
@@ -37,6 +39,8 @@ export function App() {
               <Route path="/visao-geral" element={<OverviewPage />} />
               <Route path="/devedores" element={<DevedoresGeralPage />} />
               <Route path="/investimentos" element={<InvestmentsPage />} />
+              <Route path="/financiamentos" element={<FinancingsPage />} />
+              <Route path="/financiamentos/:id" element={<FinancingDetailPage />} />
             </Route>
 
             <Route element={<AppLayout />}>
